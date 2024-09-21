@@ -1,2 +1,2 @@
-# Parallel-GPU-Programming
+# Parallel-and-GPU-Programming
 Repo containing the codes I wrote as part of learning parallel and GPU programming
