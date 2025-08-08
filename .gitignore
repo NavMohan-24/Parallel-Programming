@@ -1,0 +1,16 @@
+# Ignore executables (common patterns)
+*.out
+*.exe
+*.o
+*.obj
+*.a
+*.so
+*.dll
+
+# Ignore macOS system files
+.DS_Store
+
+# Ignore build directories
+/build/
+/bin/
+/dist/
