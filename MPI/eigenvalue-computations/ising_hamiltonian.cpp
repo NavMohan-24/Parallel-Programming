@@ -15,22 +15,20 @@ std::vector<std::vector<double>>  isingHamiltonian(int N, double J, double h){
 
     for (int k = 0 ; k < num_states; k++){
         for (int l = 0; l < num_states; l++){
+            double ham = 0.0;
             if (l == k){
-                dgouble hzz = 0.0;
                 boost::dynamic_bitset<> b(N, k);
                 for (int i = 0; i < N - 1; i++){
-                    hzz += (b[i]==b[i+1]) ? -J:J;
+                    ham += (b[i]==b[i+1]) ? -J:J;
                 }
-                hamiltonian[l][k] = hzz;
             }
             else{
-                double hx = 0.0;
                 boost::dynamic_bitset<> bl(N, l);
                 boost::dynamic_bitset<> bk(N, k);
                 boost::dynamic_bitset<> c = bl ^ bk;
-                hamiltonian[l][k] = (c.count()==1) ? -h:0; 
+                ham = (c.count()==1) ? -h:0; 
             }
-
+            hamiltonian[l][k] = ham;
         }
     }
     return hamiltonian;
