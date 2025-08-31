@@ -16,7 +16,7 @@ std::vector<std::vector<double>>  isingHamiltonian(int N, double J, double h){
     for (int k = 0 ; k < num_states; k++){
         for (int l = 0; l < num_states; l++){
             if (l == k){
-                double hzz = 0.0;
+                dgouble hzz = 0.0;
                 boost::dynamic_bitset<> b(N, k);
                 for (int i = 0; i < N - 1; i++){
                     hzz += (b[i]==b[i+1]) ? -J:J;
