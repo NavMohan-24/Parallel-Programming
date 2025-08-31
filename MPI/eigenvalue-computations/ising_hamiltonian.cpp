@@ -5,7 +5,7 @@
 // using namespace std -- can be thought analogus to "from __ import*" in python.
 
 
-std::vector<std::vector<double>>  isingHamiltonian(int N, double J){
+std::vector<std::vector<double>>  isingHamiltonian(int N, double J, double h){
 
     // int num_states = (int) std::pow(2, N); - risky and can have floating imprecision
 
@@ -18,18 +18,17 @@ std::vector<std::vector<double>>  isingHamiltonian(int N, double J){
             if (l == k){
                 double hzz = 0.0;
                 boost::dynamic_bitset<> b(N, k);
-                // for (int i = 0; i <= b.size()-1; i++){
-                //     hzz -= J*std::pow(-1,b[i]+b[i+1]);
-                // }
                 for (int i = 0; i < N - 1; i++){
-                    if (b[i] == b[i+1]) {
-                        hzz -= J;   // same spin → σᶻσᶻ = +1
-                    } 
-                    else {
-                    hzz += J;   // opposite spins → σᶻσᶻ = -1
-                    }
+                    hzz += (b[i]==b[i+1]) ? -J:J;
                 }
                 hamiltonian[l][k] = hzz;
+            }
+            else{
+                double hx = 0.0;
+                boost::dynamic_bitset<> bl(N, l);
+                boost::dynamic_bitset<> bk(N, k);
+                boost::dynamic_bitset<> c = bl ^ bk;
+                hamiltonian[l][k] = (c.count()==1) ? -h:0; 
             }
 
         }
@@ -40,11 +39,12 @@ std::vector<std::vector<double>>  isingHamiltonian(int N, double J){
 
 int main(){
 
-    int N = 4;
+    int N = 3;
     int num_states = 1 << N;
     double J = 1.0;
+    double h = 1.0;
 
-    std::vector<std::vector<double>> matrix = isingHamiltonian(N, J);
+    std::vector<std::vector<double>> matrix = isingHamiltonian(N, J, h);
 
     for (int i = 0; i < num_states; i++){
         for (int j = 0; j < num_states; j++){
