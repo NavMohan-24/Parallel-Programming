@@ -1,11 +1,7 @@
-#include <iostream>
-#include <vector>
+#include "ising.hpp"
 #include <boost/dynamic_bitset.hpp>
 
-// using namespace std -- can be thought analogus to "from __ import*" in python.
-
-
-std::vector<std::vector<double>>  isingHamiltonian(int N, double J, double h){
+std::vector<std::vector<double>>  tfimHamiltonian(int N, double J, double h){
 
     // int num_states = (int) std::pow(2, N); - risky and can have floating imprecision
 
@@ -35,6 +31,7 @@ std::vector<std::vector<double>>  isingHamiltonian(int N, double J, double h){
 
 }
 
+#ifdef BUILD_MAIN
 int main(){
 
     int N = 3;
@@ -42,7 +39,7 @@ int main(){
     double J = 1.0;
     double h = 1.0;
 
-    std::vector<std::vector<double>> matrix = isingHamiltonian(N, J, h);
+    std::vector<std::vector<double>> matrix = tfimHamiltonian(N, J, h);
 
     for (int i = 0; i < num_states; i++){
         for (int j = 0; j < num_states; j++){
@@ -52,3 +49,4 @@ int main(){
     }
 
 }
+#endif
