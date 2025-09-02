@@ -5,6 +5,6 @@
 #include <iostream>
 
 // forward declaration - telling compiler that the function exist somewhere.
-std::vector<std::vector<double>> tfimHamiltonian(int N, double J, double h);
+std::vector<double> tfimHamiltonian(int N, double J, double h);
 
 #endif
