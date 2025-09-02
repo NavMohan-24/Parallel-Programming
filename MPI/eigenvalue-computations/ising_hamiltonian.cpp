@@ -1,13 +1,13 @@
 #include "ising.hpp"
 #include <boost/dynamic_bitset.hpp>
 
-std::vector<std::vector<double>>  tfimHamiltonian(int N, double J, double h){
+std::vector<double>  tfimHamiltonian(int N, double J, double h){
 
     // int num_states = (int) std::pow(2, N); - risky and can have floating imprecision
 
     int num_states = 1 << N;
 
-    std::vector<std::vector<double>> hamiltonian(num_states, std::vector<double>(num_states,0));
+    std::vector<double> hamiltonian(num_states*num_states);
 
     for (int k = 0 ; k < num_states; k++){
         for (int l = 0; l < num_states; l++){
@@ -24,7 +24,7 @@ std::vector<std::vector<double>>  tfimHamiltonian(int N, double J, double h){
                 boost::dynamic_bitset<> c = bl ^ bk;
                 ham = (c.count()==1) ? -h:0; 
             }
-            hamiltonian[l][k] = ham;
+            hamiltonian[l*num_states+k] = ham;
         }
     }
     return hamiltonian;
@@ -39,11 +39,11 @@ int main(){
     double J = 1.0;
     double h = 1.0;
 
-    std::vector<std::vector<double>> matrix = tfimHamiltonian(N, J, h);
+    std::vector<double> matrix = tfimHamiltonian(N, J, h);
 
     for (int i = 0; i < num_states; i++){
         for (int j = 0; j < num_states; j++){
-            std::cout << matrix[i][j] << " "; 
+            std::cout << matrix[i*num_states+j] << " "; 
         }
          std::cout << std::endl;
     }
