@@ -48,22 +48,20 @@ int main(){
     double J = 1.0; 
     double h = 1.0;
 
-    std::vector<Complex> rho(num_states*num_states);
+    // std::vector<Complex> rho(num_states*num_states);
 
-    std::cout << "Printing rho matrix.." << std::endl;
-    for (int i = 0; i < num_states; i++){
-        for (int j = 0; j < num_states; j++){
-            rho[i*num_states+j] = Complex((i==j) ? 1:0,0);
-            std::cout << rho[i*num_states+j] << " ";
-        }
-        std::cout << std::endl;
-    }
+    // std::cout << "Printing rho matrix.." << std::endl;
+    // for (int i = 0; i < num_states; i++){
+    //     for (int j = 0; j < num_states; j++){
+    //         rho[i*num_states+j] = Complex((i==j) ? 1:0,0);
+    //         std::cout << rho[i*num_states+j] << " ";
+    //     }
+    //     std::cout << std::endl;
+    // }
 
     std::vector<Complex> H = tfimHamiltonian(N,J,h);
-    // std::vector<double> rho = constructRandomRho(N);
+    std::vector<Complex> rho = createRandomRho(N);
     std::vector<Complex> matrix = applyCommutator(H,rho,N);
-
-    
     
     std::cout << "Printing commutator matrix.." << std::endl;
     for (int i = 0; i < num_states; i++){
