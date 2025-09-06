@@ -1,6 +1,4 @@
 #include "random_rho.hpp"
-#include <iomanip>
-#include <Dense>
 
 
 Complex genMatrixElements(std::mt19937 &gen, std::normal_distribution<double> &dist){
@@ -35,7 +33,8 @@ std::vector<Complex> createRandomRho(int N){
     // multiply AA^{H} 
     cblas_zgemm(CblasRowMajor,CblasNoTrans,CblasConjTrans,
         num_states,num_states,num_states,&alpha,A.data(), 
-        num_states,A.data(), num_states,&beta,rho.data(), num_states
+        num_states,A.data(), num_states,&beta,rho.data(),
+        num_states
     ); 
     
     
@@ -54,6 +53,8 @@ std::vector<Complex> createRandomRho(int N){
 
 
 #ifdef BUILD_MAIN
+#include <iomanip>
+#include <Dense>
 int main() {
 
     int N = 3;
