@@ -2,7 +2,7 @@
 #include "random_rho.hpp"
 #include <vector>
 #include <cblas.h>
-#include <iomanip>
+
 
 using Complex = std::complex<double>;
 
@@ -41,35 +41,51 @@ std::vector<Complex> applyCommutator(std::vector<Complex> H, std::vector<Complex
 }
 
 #ifdef BUILD_MAIN
+#include <iomanip>
 int main(){
 
     int N = 3;
     int num_states = 1 << N;
     double J = 1.0; 
     double h = 1.0;
-
-    // std::vector<Complex> rho(num_states*num_states);
-
-    // std::cout << "Printing rho matrix.." << std::endl;
-    // for (int i = 0; i < num_states; i++){
-    //     for (int j = 0; j < num_states; j++){
-    //         rho[i*num_states+j] = Complex((i==j) ? 1:0,0);
-    //         std::cout << rho[i*num_states+j] << " ";
-    //     }
-    //     std::cout << std::endl;
-    // }
+    double tol = 1e-12;
 
     std::vector<Complex> H = tfimHamiltonian(N,J,h);
     std::vector<Complex> rho = createRandomRho(N);
     std::vector<Complex> matrix = applyCommutator(H,rho,N);
+    std::vector<Complex> anti_matrix = applyCommutator(rho,H,N);
     
+    bool isThereAntisymmetry = true;
+    Complex trace = {0.0, 0.0};
+
     std::cout << "Printing commutator matrix.." << std::endl;
     for (int i = 0; i < num_states; i++){
         for (int j = 0; j < num_states; j++){
-            std::cout << matrix[i*num_states+j] << " "; 
+            if(std::abs(matrix[i*num_states+j]+anti_matrix[i*num_states+j])>tol){
+                isThereAntisymmetry = false;
+            }
+            std::cout << std::fixed << std::setprecision(3) << matrix[i*num_states+j] << "\t"; 
         }
-         std::cout << std::endl;
+        trace += matrix[i*num_states+i];
+        std::cout << std::endl;
     }
 
+    std::cout << "\n" <<"Checking the Anti-Hermicity of the Commutator..🔬" << "\n" << std::endl;
+    if (isThereAntisymmetry){
+        std::cout << "Commutator satisfy Anti-Hermiticity ✅" << "\n" << std::endl;
+    }
+    else{
+        std::cout << "Commutator do not satisfy Anti-Heremicity ❌" << "\n" << std::endl;
+    }
+
+    std::cout << "Checking the Trace of the Commutator..🔬" << "\n" <<std::endl;
+    std::cout << std::fixed << std::setprecision(3) << "Trace of the Commutator : " << trace  << "\n"  << std::endl;
+
+    if (std::abs(trace) < tol){
+        std::cout << "Trace is close to zero..✅" << "\n" << std::endl;
+    }
+    else{
+        std::cout << "Trace is not close to zero..❌" << "\n" << std::endl;
+    }
 }
 #endif
