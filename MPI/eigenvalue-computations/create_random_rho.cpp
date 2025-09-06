@@ -13,12 +13,12 @@ inline Complex cleanMatrixElements(const Complex& z, double tol=1e-12){
     return {re, img};
 }
 
-Vector createRandomRho(int N){
+std::vector<Complex> createRandomRho(int N){
 
     int num_states = 1 << N;
 
-    Vector A(num_states*num_states);
-    Vector rho(num_states*num_states);
+    std::vector<Complex> A(num_states*num_states);
+    std::vector<Complex> rho(num_states*num_states);
 
     std::random_device rd;
     std::mt19937 gen(rd());
@@ -59,7 +59,7 @@ int main() {
     int N = 3;
     int num_states = 1 << N;
 
-    Vector matrix = createRandomRho(N);
+    std::vector<Complex> matrix = createRandomRho(N);
     Eigen::MatrixXcd eigen_matrix(num_states, num_states);
 
     Complex trace = {0.0,0.0};

@@ -9,11 +9,11 @@
 
 //alias
 using Complex = std::complex<double>;
-using Vector = std::vector<Complex>;
+//using Vector = std::vector<Complex>;
 
 
 Complex genMatrixElements(std::mt19937 &gen, std::normal_distribution<double> & dist);
-Vector createRandomRho(int N);
+std::vector<Complex> createRandomRho(int N);
 
 
 
