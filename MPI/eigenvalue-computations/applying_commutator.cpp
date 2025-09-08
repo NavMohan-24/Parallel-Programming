@@ -7,7 +7,7 @@
 using Complex = std::complex<double>;
 
 
-std::vector<Complex> applyCommutator(std::vector<Complex>& H, std::vector<Complex>& rho, int num_states){
+std::vector<Complex> applyCommutator(std::vector<Complex>& matA, std::vector<Complex>& matB, int num_states){
     
     Complex alpha = {1.0,0.0};
     Complex beta =  {0.0,0.0};
@@ -19,15 +19,15 @@ std::vector<Complex> applyCommutator(std::vector<Complex>& H, std::vector<Comple
 
     // A = H * rho
     cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
-        num_states, num_states, num_states, &alpha, H.data(),
-        num_states, rho.data(), num_states, &beta, A.data(), 
+        num_states, num_states, num_states, &alpha, matA.data(),
+        num_states, matB.data(), num_states, &beta, A.data(), 
         num_states
     );
 
-    // B = rho * H
+    // B = rho * H 
     cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
-        num_states, num_states, num_states, &alpha, rho.data(),
-        num_states, H.data(), num_states, &beta, B.data(),
+        num_states, num_states, num_states, &alpha, matB.data(),
+        num_states, matA.data(), num_states, &beta, B.data(),
         num_states
     );
 
