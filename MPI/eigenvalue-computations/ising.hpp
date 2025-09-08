@@ -8,6 +8,6 @@
 using Complex = std::complex<double>;
 
 // forward declaration - telling compiler that the function exist somewhere.
-std::vector<Complex> tfimHamiltonian(int N, double J, double h);
+std::vector<Complex> tfimHamiltonian(int num_states, int N, double J, double h);
 
 #endif

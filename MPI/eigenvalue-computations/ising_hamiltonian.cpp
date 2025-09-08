@@ -2,11 +2,11 @@
 #include <boost/dynamic_bitset.hpp>
 #include <iomanip>
 
-std::vector<Complex>  tfimHamiltonian(int N, double J, double h){
+std::vector<Complex>  tfimHamiltonian(int num_states, int N, double J, double h){
 
     // int num_states = (int) std::pow(2, N); - risky and can have floating imprecision
 
-    int num_states = 1 << N;
+    // int num_states = 1 << N;
 
     std::vector<Complex> hamiltonian(num_states*num_states);
 
@@ -42,7 +42,7 @@ int main(){
     double J = 1.0;
     double h = 1.0;
 
-    std::vector<Complex> matrix = tfimHamiltonian(N, J, h);
+    std::vector<Complex> matrix = tfimHamiltonian(num_states, N, J, h);
     Eigen::MatrixXcd eigen_matrix(num_states, num_states);
 
     Complex trace = {0.0,0.0};

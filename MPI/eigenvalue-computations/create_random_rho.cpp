@@ -11,9 +11,9 @@ inline Complex cleanMatrixElements(const Complex& z, double tol=1e-12){
     return {re, img};
 }
 
-std::vector<Complex> createRandomRho(int N){
+std::vector<Complex> createRandomRho(int num_states){
 
-    int num_states = 1 << N;
+    // int num_states = 1 << N;
 
     std::vector<Complex> A(num_states*num_states);
     std::vector<Complex> rho(num_states*num_states);
@@ -60,7 +60,7 @@ int main() {
     int N = 3;
     int num_states = 1 << N;
 
-    std::vector<Complex> matrix = createRandomRho(N);
+    std::vector<Complex> matrix = createRandomRho(num_states);
     Eigen::MatrixXcd eigen_matrix(num_states, num_states);
 
     Complex trace = {0.0,0.0};

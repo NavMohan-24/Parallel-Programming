@@ -7,11 +7,11 @@
 using Complex = std::complex<double>;
 
 
-std::vector<Complex> applyCommutator(std::vector<Complex> H, std::vector<Complex> rho, int N){
+std::vector<Complex> applyCommutator(std::vector<Complex>& H, std::vector<Complex>& rho, int num_states){
     
     Complex alpha = {1.0,0.0};
     Complex beta =  {0.0,0.0};
-    int num_states = 1 << N;
+    // int num_states = 1 << N;
 
     std::vector<Complex> A(num_states*num_states);
     std::vector<Complex> B(num_states*num_states);
@@ -50,10 +50,10 @@ int main(){
     double h = 1.0;
     double tol = 1e-12;
 
-    std::vector<Complex> H = tfimHamiltonian(N,J,h);
-    std::vector<Complex> rho = createRandomRho(N);
-    std::vector<Complex> matrix = applyCommutator(H,rho,N);
-    std::vector<Complex> anti_matrix = applyCommutator(rho,H,N);
+    std::vector<Complex> H = tfimHamiltonian(num_states, N, J,h);
+    std::vector<Complex> rho = createRandomRho(num_states);
+    std::vector<Complex> matrix = applyCommutator(H,rho,num_states);
+    std::vector<Complex> anti_matrix = applyCommutator(rho,H,num_states);
     
     bool isThereAntisymmetry = true;
     Complex trace = {0.0, 0.0};
