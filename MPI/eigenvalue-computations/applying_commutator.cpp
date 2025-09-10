@@ -50,8 +50,21 @@ int main(){
     double h = 1.0;
     double tol = 1e-12;
 
+    std::vector<Complex> psi = {
+        Complex (1.0 / std::sqrt(2.0)),
+        Complex (0.0),
+        Complex (0.0), 
+        Complex (0.0), 
+        Complex (0.0), 
+        Complex (0.0), 
+        Complex (0.0),
+        Complex (1.0 / std::sqrt(2.0)) 
+    };
+
+
     std::vector<Complex> H = tfimHamiltonian(num_states, N, J,h);
-    std::vector<Complex> rho = createRandomRho(num_states);
+    // std::vector<Complex> rho = createRandomRho(num_states);
+    std::vector<Complex> rho = createRhoFromStatevector(psi);
     std::vector<Complex> matrix = applyCommutator(H,rho,num_states);
     std::vector<Complex> anti_matrix = applyCommutator(rho,H,num_states);
     
