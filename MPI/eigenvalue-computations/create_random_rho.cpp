@@ -52,15 +52,45 @@ std::vector<Complex> createRandomRho(int num_states){
 }
 
 
+std::vector<Complex> createRhoFromStatevector(std::vector<Complex>& psi){
+
+    int N = (int) psi.size();
+
+    std::vector<Complex> rho(N*N);
+
+    for (int i = 0; i < N; i++){
+        for (int j = 0; j < N; j++){
+            rho[i*N+j] = psi[i]*std::conj(psi[j]); // outer product
+        }
+    }
+
+    return rho;
+
+}
+
 #ifdef BUILD_MAIN
 #include <iomanip>
 #include <Dense>
+#include <cmath>
 int main() {
 
     int N = 3;
     int num_states = 1 << N;
 
     std::vector<Complex> matrix = createRandomRho(num_states);
+
+    std::vector<Complex> psi = {
+        Complex (1.0 / std::sqrt(2.0)),
+        Complex (0.0),
+        Complex (0.0), 
+        Complex (0.0), 
+        Complex (0.0), 
+        Complex (0.0), 
+        Complex (0.0),
+        Complex (1.0 / std::sqrt(2.0)) 
+    };
+
+    //std::vector<Complex> matrix = createRhoFromStatevector(psi);
     Eigen::MatrixXcd eigen_matrix(num_states, num_states);
 
     Complex trace = {0.0,0.0};
