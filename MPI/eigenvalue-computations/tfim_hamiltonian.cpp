@@ -1,4 +1,4 @@
-#include "ising.hpp"
+#include "tfim.hpp"
 #include <boost/dynamic_bitset.hpp>
 #include <iomanip>
 

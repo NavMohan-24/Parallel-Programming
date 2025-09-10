@@ -1,5 +1,5 @@
-#ifndef ISING_HPP
-#define ISING_HPP
+#ifndef TFIM_HPP
+#define TFIM_HPP
 
 #include <vector>
 #include <iostream>

@@ -1,4 +1,4 @@
-#include "ising.hpp"
+#include "tfim.hpp"
 #include "random_rho.hpp"
 #include <vector>
 #include <cblas.h>
