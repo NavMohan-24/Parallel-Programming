@@ -48,22 +48,69 @@ std::vector<Complex> constructJumpOperator(int N, int num_states, int k, DecayTy
 
 #ifdef BUILD_MAIN
 #include <iomanip>
+
+bool complex_equal(const Complex& x, const Complex& y, double eps = 1e-12) {
+    return std::abs(x - y) < eps;
+    };
+
+bool vector_equal(const std::vector<Complex>& a,
+                const std::vector<Complex>& b,
+                double eps = 1e-12) {
+    if (a.size() != b.size()) return false;
+    for (size_t i = 0; i < a.size(); i++) {
+        if (!complex_equal(a[i], b[i], eps)) return false;
+    }
+    return true;
+};
 int main(){
 
-    int N = 3;
+    std::cout << "Running Unit tests..🔬" << "\n" << std::endl;
+    
+    int N = 1;
     int num_states = 1 << N;
-    int k = 2;
+    int k = 1;
+    DecayType sigmaminus = DecayType::SigmaMinus;
+    DecayType sigmaplus = DecayType::SigmaPlus;
     DecayType dephasing = DecayType::Dephasing;
 
-    std::vector<Complex> matrix = constructJumpOperator(N,num_states,k,dephasing);
+    std::vector<Complex> matrix_1 = constructJumpOperator(N,num_states,k,sigmaminus);
+    
+    std::vector<Complex> matrix_2 = constructJumpOperator(N,num_states,k,sigmaplus);
+    std::vector<Complex> matrix_3 = constructJumpOperator(N,num_states,k,dephasing);
 
-    std::cout << "Printing Jump matrix.." << "\n" << std::endl;
-    for (int i = 0; i < num_states; i++){
-        for (int j = 0; j < num_states; j++){
-            std::cout << std::fixed << std::setprecision(3) << matrix[i*num_states+j] << "\t"; 
-        }
-        std::cout << std::endl;
-    };
+    std::vector<Complex> SigmaMinus = {Complex(0,0), Complex(1,0), Complex(0,0), Complex(0,0)};
+    std::vector<Complex> SigmaPlus = {Complex(0,0), Complex(0,0), Complex(1,0), Complex(0,0)};
+    std::vector<Complex> SigmaZ = {Complex(1,0), Complex(0,0), Complex(0,0), Complex(-1,0)};
+
+    if (vector_equal(matrix_1,SigmaMinus)){
+        std::cout << "SigmaMinus decay type pass the unit test ✅" << std::endl;
+    }
+    else{
+        std::cout << "SigmaMinus decay type fails the unit test ❌" << std::endl;
+    }
+
+    if (vector_equal(matrix_2,SigmaPlus)){
+        std::cout << "SigmaPlus decay type pass the unit test ✅" << std::endl;
+    }
+    else{
+        std::cout << "SigmaPlus decay type fails the unit test ❌" << std::endl;
+    }
+
+    if (vector_equal(matrix_3,SigmaZ)){
+        std::cout << "SigmaZ decay type pass the unit test ✅" << std::endl;
+    }
+    else{
+        std::cout << "SigmaZ decay type fails the unit test ❌" << std::endl;
+    }
+
+    
+
+    
+
+
+
+
+
 
 }
 #endif
