@@ -11,6 +11,6 @@ enum class DecayType {SigmaMinus, SigmaPlus, Dephasing};
 using Complex = std::complex<double>;
 //using JumpOpsVec = std::vector<std::vector<Complex>>;
 
-std::vector<Complex> constructJumpOperator(int N, int num_states,int k, DecayType type, Scope scope);
+std::vector<Complex> constructJumpOperator(int N, int num_states, int k, double rate, DecayType type, Scope scope);
 
 #endif
