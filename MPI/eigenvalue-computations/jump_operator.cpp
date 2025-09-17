@@ -1,7 +1,7 @@
 #include "jump_op.hpp"
 #include <boost/dynamic_bitset.hpp>
 
-std::vector<Complex> constructJumpOperator(int N, int num_states, int k, double rate = 1.0, DecayType type = DecayType::SigmaMinus, Scope scope = Scope::Local){
+std::vector<Complex> constructJumpOperator(int N, int num_states, int k, double rate = 1.0, DecayType type = DecayType::Damping, Scope scope = Scope::Local){
 
     std::vector<Complex> jump_k(num_states*num_states, Complex(0,0)); 
 
@@ -10,7 +10,7 @@ std::vector<Complex> constructJumpOperator(int N, int num_states, int k, double 
     switch(scope)
     {
     case Scope::Local:
-        if (type == DecayType::SigmaMinus){
+        if (type == DecayType::Damping){
             for (int m = 0; m < num_states; m++){
                 int n = m + (1 << (k-1));
                 if (n < num_states){
@@ -20,7 +20,7 @@ std::vector<Complex> constructJumpOperator(int N, int num_states, int k, double 
             };
             return jump_k;
         }
-        if (type == DecayType::SigmaPlus){
+        if (type == DecayType::Pumping){
             for (int m = 0; m < num_states; m++){
                 int n = m - (1 << (k-1));
                 if (n >= 0){
@@ -153,8 +153,8 @@ int main(){
     std::vector<Complex> SigmaPlus = {Complex(0,0), Complex(0,0), Complex(1,0), Complex(0,0)};
     std::vector<Complex> SigmaZ = {Complex(1,0), Complex(0,0), Complex(0,0), Complex(-1,0)};
 
-    DecayType sigmaminus = DecayType::SigmaMinus;
-    DecayType sigmaplus = DecayType::SigmaPlus;
+    DecayType damping = DecayType::Damping;
+    DecayType pumping = DecayType::Pumping;
     DecayType dephasing = DecayType::Dephasing;
 
     std::cout << "Running Unit tests..🔬" << "\n" << std::endl;
@@ -164,23 +164,23 @@ int main(){
     int k = 1;
 
     // constructing jump operators for N=1 and k=1
-    std::vector<Complex> mat11m = constructJumpOperator(N,num_states,k,1.0,sigmaminus);
-    std::vector<Complex> mat11p = constructJumpOperator(N,num_states,k,1.0,sigmaplus);
+    std::vector<Complex> mat11m = constructJumpOperator(N,num_states,k,1.0,damping);
+    std::vector<Complex> mat11p = constructJumpOperator(N,num_states,k,1.0,pumping);
     std::vector<Complex> mat11z = constructJumpOperator(N,num_states,k,1.0,dephasing);
     
     // Test
     if (vectorEqual(mat11m,SigmaMinus)){
-        std::cout << "SigmaMinus decay type pass the unit test for N=1 ✅" << std::endl;
+        std::cout << "Damping decay type pass the unit test for N=1 ✅" << std::endl;
     }
     else{
-        std::cout << "SigmaMinus decay type fails the unit test for N=1 ❌" << std::endl;
+        std::cout << "Damping decay type fails the unit test for N=1 ❌" << std::endl;
     }
 
     if (vectorEqual(mat11p,SigmaPlus)){
-        std::cout << "SigmaPlus decay type pass the unit test for N=1 ✅" << std::endl;
+        std::cout << "Pumping decay type pass the unit test for N=1 ✅" << std::endl;
     }
     else{
-        std::cout << "SigmaPlus decay type fails the unit test for N=1 ❌" << std::endl;
+        std::cout << "Pumping decay type fails the unit test for N=1 ❌" << std::endl;
     }
 
     if (vectorEqual(mat11z,SigmaZ)){
@@ -196,22 +196,22 @@ int main(){
     num_states = 1 << N;
     
     // constructing jump operators for N=1 and k=1
-    std::vector<Complex> mat21m = constructJumpOperator(N,num_states,1,1.0,sigmaminus);
-    std::vector<Complex> mat22m = constructJumpOperator(N,num_states,2,1.0,sigmaminus);
+    std::vector<Complex> mat21m = constructJumpOperator(N,num_states,1,1.0,damping);
+    std::vector<Complex> mat22m = constructJumpOperator(N,num_states,2,1.0,damping);
 
 
     std::vector<Complex> m1 = kroneckerProduct(Identity, N, SigmaMinus, N);
     std::vector<Complex> m2 = kroneckerProduct(SigmaMinus, N, Identity, N);
 
     if (vectorEqual(mat21m,m1) & vectorEqual(mat22m, m2)){
-        std::cout << "SigmaMinus decay type pass the unit test for N=2 ✅" << std::endl;
+        std::cout << "Damping decay type pass the unit test for N=2 ✅" << std::endl;
     }
     else{
-        std::cout << "SigmaMinus decay type fails the unit test for N=2 ❌" << std::endl;
+        std::cout << "Damping decay type fails the unit test for N=2 ❌" << std::endl;
     }
 
-    std::vector<Complex> mat21p = constructJumpOperator(N,num_states,1,1.0,sigmaplus);
-    std::vector<Complex> mat22p = constructJumpOperator(N,num_states,2,1.0,sigmaplus);
+    std::vector<Complex> mat21p = constructJumpOperator(N,num_states,1,1.0,pumping);
+    std::vector<Complex> mat22p = constructJumpOperator(N,num_states,2,1.0,pumping);
 
     std::vector<Complex> p1 = kroneckerProduct(Identity, N, SigmaPlus, N);
     std::vector<Complex> p2 = kroneckerProduct(SigmaPlus, N, Identity, N);
@@ -221,10 +221,10 @@ int main(){
 
 
     if (vectorEqual(mat21p,p1) && vectorEqual(mat22p, p2)){
-        std::cout << "SigmaPlus decay type pass the unit test for N=2 ✅" << std::endl;
+        std::cout << "Pumping decay type pass the unit test for N=2 ✅" << std::endl;
     }
     else{
-        std::cout << "SigmaPlus decay type fails the unit test for N=2 ❌" << std::endl;
+        std::cout << "Pumping decay type fails the unit test for N=2 ❌" << std::endl;
     }
 
     std::vector<Complex> mat21z = constructJumpOperator(N,num_states,1,1.0,dephasing);
@@ -234,10 +234,10 @@ int main(){
     std::vector<Complex> z2 = kroneckerProduct(SigmaZ, N, Identity, N);
 
     if (vectorEqual(mat21z,z1) && vectorEqual(mat22z, z2)){
-        std::cout << "SigmaZ decay type pass the unit test for N=2 ✅" << std::endl;
+        std::cout << "Dephasing decay type pass the unit test for N=2 ✅" << std::endl;
     }
     else{
-        std::cout << "SigmaZ decay type fails the unit test for N=2 ❌" << std::endl;
+        std::cout << "Dephasing decay type fails the unit test for N=2 ❌" << std::endl;
     }
 
     // Testing Properties of Jump Operators
@@ -248,9 +248,9 @@ int main(){
     Complex trace1(0.0,0.0);
     Complex trace2(0.0,0.0);
 
-    std::cout << "\nTesting Cyclic Properties of Sigma Minus Jump Operators..🔬" << std::endl;
+    std::cout << "\nTesting Cyclic Properties of Damping Jump Operators..🔬" << std::endl;
 
-    std::vector<Complex> mat32m = constructJumpOperator(N,num_states,2,1.0,sigmaminus);
+    std::vector<Complex> mat32m = constructJumpOperator(N,num_states,2,1.0,damping);
     std::vector<Complex> mat32mt = hermitian(mat32m, num_states);
 
     // Calculate Tr(J*rho*J_dagger)
@@ -272,10 +272,10 @@ int main(){
         std::cout << "Trace 2: " << trace2 << std::endl;
     }
 
-    std::cout << "\nTesting Cyclic Properties of Sigma Plus Jump Operators..🔬" << std::endl;
+    std::cout << "\nTesting Cyclic Properties of Pumping Jump Operators..🔬" << std::endl;
 
-    // Change from SigmaMinus to SigmaPlus, and k from 2 to 1
-    std::vector<Complex> mat31p = constructJumpOperator(N, num_states, 1, 1.0, sigmaplus);
+    // Change from damping to pumping, and k from 2 to 1
+    std::vector<Complex> mat31p = constructJumpOperator(N, num_states, 1, 1.0, pumping);
     std::vector<Complex> mat31pt = hermitian(mat31p, num_states); // Using mat31p for hermitian
     // std::vector<Complex> rho = createRandomRho(num_states);
 
@@ -301,7 +301,7 @@ int main(){
     std::cout << "\nTesting Cyclic Properties of Dephasing Jump Operators..🔬"  << std::endl;
     
 
-    // Change from SigmaPlus to SigmaZ, and k from 1 to 3
+    // Change from pumping to dephasing, and k from 1 to 3
     std::vector<Complex> mat33z = constructJumpOperator(N, num_states, 3, 1.0, dephasing);
     std::vector<Complex> mat33zt = hermitian(mat33z, num_states); // Using mat33z for hermitian
     // std::vector<Complex> rho = createRandomRho(num_states);

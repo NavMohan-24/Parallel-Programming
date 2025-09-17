@@ -5,7 +5,7 @@
 #include <iostream>
 
 enum class Scope {Local,Collective};
-enum class DecayType {SigmaMinus, SigmaPlus, Dephasing};
+enum class DecayType {Damping, Pumping, Dephasing}; // Sigma Minus, Sigma Plus, Sigma Z
 
 //type alias complex data type
 using Complex = std::complex<double>;
