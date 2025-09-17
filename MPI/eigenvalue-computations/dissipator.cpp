@@ -41,7 +41,7 @@ std::vector<Complex> applyAntiCommutator(const std::vector<Complex>& matA,const 
 
 }
 
-std::vector<Complex> constructDissipator(const std::vector<Complex>& rho, int N, int num_states, double rate = 1.0){
+std::vector<Complex> constructDissipator(const std::vector<Complex>& rho, int N, int num_states, double rate = 1.0, DecayType decay = DecayType::Damping, Scope scope = Scope::Local){
     // D(ρ)=∑_k​(L_k ​ρ L_k^†​ − 1/2{L_k^†​ L_k​,ρ})
    
     std::vector<Complex> Dissipator(num_states*num_states, Complex(0,0));
@@ -49,7 +49,7 @@ std::vector<Complex> constructDissipator(const std::vector<Complex>& rho, int N,
 
     for (int k = 1; k <= N; k++){
 
-        std::vector<Complex> Jk = constructJumpOperator(N,num_states,k,rate,DecayType::SigmaMinus,Scope::Local);
+        std::vector<Complex> Jk = constructJumpOperator(N,num_states,k,rate,decay,scope);
 
         //compute Jk^†​Jk
         Complex alpha = {0.5,0.0}; // 1/2 infront of anti commutator
