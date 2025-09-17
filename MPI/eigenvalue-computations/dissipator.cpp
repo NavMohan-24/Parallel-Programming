@@ -89,6 +89,8 @@ std::vector<Complex> constructDissipator(const std::vector<Complex>& rho, int N,
     return Dissipator;
 }
 
+
+#ifdef BUILD_MAIN
 bool complexEqual(const Complex& x, const Complex& y, double tol = 1e-12){
     return std::abs(x-y) < tol;
 }
@@ -101,6 +103,27 @@ bool vectorEqual(const std::vector<Complex>& A, const std::vector<Complex>& B,do
     return true;
 }
 
+Complex computeTrace(const std::vector<Complex>& A, int N){
+
+    //assumes a square matrix
+    Complex trace = (0.0,0.0);
+    for (int i = 0; i < N; i++){
+        trace += A[i*N+i];
+    }
+    return trace;
+}
+
+bool checkHermicity(const std::vector<Complex>& A, int N, double tol = 1e-12){
+
+    for (int i = 0; i < N; i++){
+       for (int j = 0; j < N; j++){
+           if (std::abs(A[i*N+j] - std::conj(A[j*N+i])) > tol) {return false;} 
+       } 
+    }
+    return true;
+}   
+
+
 int main(){
 
     // coherent evolution test
@@ -109,10 +132,10 @@ int main(){
     double k = 0.0;
 
     std::vector<Complex> rho = createRandomRho(num_states);
-    std::vector<Complex> Disspator = constructDissipator(rho, N, num_states,k);
+    std::vector<Complex> Dissipator = constructDissipator(rho, N, num_states,k);
     std::vector<Complex> ref(num_states*num_states, Complex(0,0));
 
-    if (vectorEqual(Disspator, ref)){
+    if (vectorEqual(Dissipator, ref)){
         std::cout<<"\n Dissipator is Zero Matrix for rate = 0..✅" << "\n" <<std::endl;
     }
     else{
@@ -131,69 +154,42 @@ int main(){
     };
  
     rho = createRhoFromStatevector(psi);
-    Disspator = constructDissipator(rho, N, num_states,k);
+    Dissipator = constructDissipator(rho, N, num_states,k);
 
     ref = {0.5, -0.25, -0.25, -0.5};
 
-    if (vectorEqual(Disspator,ref)){
+    if (vectorEqual(Dissipator,ref)){
         std::cout<<"\n Passed Unit test for Dissipator..✅" << "\n" <<std::endl;
     }
     else{
         std::cout<<"\n Failed Unit test for Dissipator..❌" << "\n" <<std::endl;
     }
 
-    // testing Hermicity Preservation
+    // testing properties of dissipator
+    N = 3;
+    num_states = 1 << N;
+    k = 1.0;
 
-    
+    rho = createRandomRho(num_states);
+    Dissipator = constructDissipator(rho, N, num_states, k);
 
+    Complex trace = computeTrace(Dissipator,num_states);
+    double tol = 1e-12;
 
-    // for (int i = 0; i < num_states; i++){
-    //     for (int j = 0; j < num_states; j++){
-    //         std::cout << std::setw(10) << std::fixed << std::setprecision(3) << ref[i*num_states+j] << '\t';
-    //     }
-    //     std::cout << std::endl; 
-    // }
-    // std::cout << "\n" << std::endl; 
-    // for (int i = 0; i < num_states; i++){
-    //     for (int j = 0; j < num_states; j++){
-    //         std::cout << std::setw(10) << std::fixed << std::setprecision(3) << Disspator[i*num_states+j] << '\t';
-    //     }
-    //     std::cout << std::endl; 
-    // }
-    // std::cout << "\n" << std::endl; 
+    if (trace.imag() == 0.0 && std::abs(trace)< tol){
+        std::cout<<"\n Trace of the Disspator is Zero..✅" << "\n" <<std::endl;
+    }
+    else{
+        std::cout<<"\n Trace of the Disspator is NOT Zero..❌" << "\n" <<std::endl;
+    }
 
-    // for (int i = 0; i < num_states; i++){
-    //     for (int j = 0; j < num_states; j++){
-    //         std::cout << std::setw(10) << std::fixed << std::setprecision(3) << rho[i*num_states+j] << '\t';
-    //     }
-    //     std::cout << std::endl; 
-    // }
-
-
-
-
-
-
-
-
-
-
-
-
-
-    // int N = 3;
-    // int num_states = 1 << N;
-
-    // std::vector<Complex> rho = createRandomRho(num_states);
-    // std::vector<Complex> Disspator = constructDissipator(rho, N, num_states);
-
-    // for (int i = 0; i < num_states; i++){
-    //     for (int j = 0; j < num_states; j++){
-    //         std::cout << std::setw(10) << std::fixed << std::setprecision(3) << Disspator[i*num_states+j] << '\t';
-    //     }
-    //     std::cout << std::endl; 
-    // }
-    // std::cout << std::endl; 
+    if (checkHermicity(Dissipator, num_states)){
+        std::cout<<"\n Dissipator is Hermitian..✅" << "\n" <<std::endl;
+    }
+    else{
+        std::cout<<"\n Dissipator is NOT Hermitian..❌" << "\n" <<std::endl;
+    }
 }
+#endif
 
 
