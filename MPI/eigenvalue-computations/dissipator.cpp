@@ -42,7 +42,7 @@ std::vector<Complex> applyAntiCommutator(const std::vector<Complex>& matA,const 
 }
 
 std::vector<Complex> constructDissipator(const std::vector<Complex>& rho, int N, int num_states, double rate = 1.0, DecayType decay = DecayType::Damping, Scope scope = Scope::Local){
-    // D(ρ)=∑_k​(L_k ​ρ L_k^†​ − 1/2{L_k^†​ L_k​,ρ})
+    // D(ρ)=∑_k​(J_k ​ρ J_k^†​ − 1/2{J_k^†​ J_k​,ρ})
    
     std::vector<Complex> Dissipator(num_states*num_states, Complex(0,0));
     Complex beta =  {0.0,0.0};
