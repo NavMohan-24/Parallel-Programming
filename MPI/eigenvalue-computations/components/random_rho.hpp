@@ -13,8 +13,8 @@ using Complex = std::complex<double>;
 
 
 Complex genMatrixElements(std::mt19937 &gen, std::normal_distribution<double> & dist);
-std::vector<Complex> createRandomRho(int num_states);
-std::vector<Complex> createRhoFromStatevector(std::vector<Complex>& psi);
+std::vector<Complex> constructRandomRho(int num_states);
+std::vector<Complex> constructRhoFromStatevector(std::vector<Complex>& psi);
 
 
 
