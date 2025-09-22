@@ -28,4 +28,6 @@ Complex computeTrace(const std::vector<Complex>& A, int N);
 
 bool checkHermicity(const std::vector<Complex>& A, int N, double tol = 1e-12);
 
-bool checkPositiveSemiDefinitivity(const std::vector<Complex>& A, int N, double tol = 1e-12);
+// bool checkPositiveSemiDefinitivity(const std::vector<Complex>& A, int N, double tol = 1e-12);
+
+Eigen::VectorXd findEigenvalues(const std::vector<Complex>& A, int N);

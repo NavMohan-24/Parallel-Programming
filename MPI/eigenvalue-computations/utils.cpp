@@ -98,9 +98,30 @@ bool checkHermicity(const std::vector<Complex>& A, int N, double tol){
     return true;
 }   
 
-bool checkPositiveSemiDefinitivity(const std::vector<Complex>& A, int N, double tol){
-    Eigen::MatrixXcd eigen_matrix(N,N);
+// bool checkPositiveSemiDefinitivity(const std::vector<Complex>& A, int N, double tol){
+//     Eigen::MatrixXcd eigen_matrix(N,N);
 
+//     // Copy flat vector into Eigen matrix
+//     for (int i = 0; i < N; i++){
+//         for (int j = 0; j < N; j++){
+//             eigen_matrix(i,j) = A[i*N + j];  // row-major
+//         }
+//     }
+
+//     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXcd> es(eigen_matrix);
+//     Eigen::VectorXd eigenvalues = es.eigenvalues();
+
+//     std::cout << "Eigenvalues: " << eigenvalues.transpose() << "\n";
+
+//     for (int i = 0; i < eigenvalues.size(); i++){
+//         if (eigenvalues[i] < -tol) return false; // allow small negative tol due to FP
+//     }
+//     return true;
+// }
+
+Eigen::VectorXd findEigenvalues(const std::vector<Complex>& A, int N){
+    Eigen::MatrixXcd eigen_matrix(N,N);
+   
     // Copy flat vector into Eigen matrix
     for (int i = 0; i < N; i++){
         for (int j = 0; j < N; j++){
@@ -111,10 +132,6 @@ bool checkPositiveSemiDefinitivity(const std::vector<Complex>& A, int N, double 
     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXcd> es(eigen_matrix);
     Eigen::VectorXd eigenvalues = es.eigenvalues();
 
-    std::cout << "Eigenvalues: " << eigenvalues.transpose() << "\n";
+    return eigenvalues;
 
-    for (int i = 0; i < eigenvalues.size(); i++){
-        if (eigenvalues[i] < -tol) return false; // allow small negative tol due to FP
-    }
-    return true;
 }
