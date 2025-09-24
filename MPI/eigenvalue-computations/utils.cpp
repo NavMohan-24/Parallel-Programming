@@ -100,19 +100,15 @@ bool checkHermicity(const std::vector<Complex>& A, int N, double tol){
 
 // bool checkPositiveSemiDefinitivity(const std::vector<Complex>& A, int N, double tol){
 //     Eigen::MatrixXcd eigen_matrix(N,N);
-
 //     // Copy flat vector into Eigen matrix
 //     for (int i = 0; i < N; i++){
 //         for (int j = 0; j < N; j++){
 //             eigen_matrix(i,j) = A[i*N + j];  // row-major
 //         }
 //     }
-
 //     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXcd> es(eigen_matrix);
 //     Eigen::VectorXd eigenvalues = es.eigenvalues();
-
 //     std::cout << "Eigenvalues: " << eigenvalues.transpose() << "\n";
-
 //     for (int i = 0; i < eigenvalues.size(); i++){
 //         if (eigenvalues[i] < -tol) return false; // allow small negative tol due to FP
 //     }
@@ -135,3 +131,24 @@ Eigen::VectorXd findEigenvalues(const std::vector<Complex>& A, int N){
     return eigenvalues;
 
 }
+
+std::vector<Complex> hermitian(const std::vector<Complex>& A, int N){
+    std::vector<Complex> B(N * N, Complex(0, 0));
+
+    for (int i = 0; i < N; i++){
+        for (int j=0; j < N; j++){
+            B[j*N+i] = std::conj(A[i*N+j]);
+        }
+    }
+    return B;
+}
+
+void printResult(bool condition, const std::string& testName) {
+        
+    if (condition)
+        std::cout << testName << " ✅" << std::endl;
+    else
+        std::cout << testName << " ❌" << std::endl;
+    
+    
+    }

@@ -31,3 +31,7 @@ bool checkHermicity(const std::vector<Complex>& A, int N, double tol = 1e-12);
 // bool checkPositiveSemiDefinitivity(const std::vector<Complex>& A, int N, double tol = 1e-12);
 
 Eigen::VectorXd findEigenvalues(const std::vector<Complex>& A, int N);
+
+std::vector<Complex> hermitian(const std::vector<Complex>& A, int N);
+
+void printResult(bool condition, const std::string& testName);
