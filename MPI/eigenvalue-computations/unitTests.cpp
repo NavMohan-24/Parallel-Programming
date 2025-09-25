@@ -4,174 +4,91 @@
 #include "utils.hpp"
 
 
-class TestDensityMatrix{
-
-    private:
-        int N;
-        std::vector<Complex> psi_matrix;
-        std::vector<Complex> matrix;
-        int num_states;
-        double tol;
-    
+class TestDensityMatrix{  
     public:
-        TestDensityMatrix(int N_, std::vector<Complex> psi_) : N(N_),tol(1e-12){
-            num_states = 1 << N;
-            matrix = constructRandomRho(num_states);
-            psi_matrix = constructRhoFromStatevector(psi_);
-        } 
-
-        void testTraceofRandomMatrix(){
-            Complex trace = computeTrace(matrix, num_states);
-            auto val = std::abs(trace.real() - 1.0) < tol;
-            auto val2 = std::abs(trace.imag()) < tol;
-
-            // std::cout << val << '\t' << val2 << std::endl;
-            if (std::abs(trace.real() - 1.0) < tol && std::abs(trace.imag()) < tol){
-                std::cout << "Trace of the random Density Matrix constructed is correct...✅ " << '\n';
-            }
-            else{
-                 std::cout << "Trace of the random Density Matrix constructed is NOT correct...❌" << '\n';
-            }
+        void testTrace(const std::vector<Complex>& matrix, int num_states, double tol = 1e-12){
+            Complex trace = computeTrace(matrix,  num_states);
+            bool condition = std::abs(trace.real() - 1.0) < tol && std::abs(trace.imag()) < tol;
+            printResult(condition,"Trace of the Density Matrix");
         }
         
-        void testHermicityofRandomMatrix(){
+        void testHermicity(const std::vector<Complex>& matrix, int num_states){
 
             bool isHermitian = checkHermicity(matrix,num_states);
-
-            if (isHermitian){
-                std::cout << "Random Density Matrix is Hermitian ✅" << "\n" << std::endl;
-            }
-            else{
-                std::cout << "Random Density Matrix is NOT Hermitian ❌" << "\n" << std::endl;
-            }
+            printResult(isHermitian,"Hermicity of the Density Matrix");
 
         }
 
-        void testPositiveSemiDefinitivityofRandomMatrix(){
+        void testPositiveSemiDefinitivity(const std::vector<Complex>& matrix, int num_states, double tol = 1e-12){
            
-            // bool isPositiveSemiDefinite = checkPositiveSemiDefinitivity(psi_matrix,num_states);
             bool isPositiveSemiDefinite = true;
-
             auto es = findEigenvalues(matrix, num_states);
-
             for (int i = 0; i < es.size(); i++){
                 if (es[i] < -tol) {isPositiveSemiDefinite= false;} // allow small negative tol due to FP
             }
-
-            if (isPositiveSemiDefinite){
-                std::cout << "Random Density Matrix is Positive Semi-Definite ✅" << "\n" << std::endl;
-            }
-            else{
-                std::cout << "Random Density Matrix is NOT Positive Semi-Definite ❌" << "\n" << std::endl;
-            }
-            
-
+            printResult(isPositiveSemiDefinite,"Positive SemiDefinitivity of the Density Matrix");
         }
 
-        void testTraceofPsiMatrix(){
-            Complex trace = computeTrace(psi_matrix, num_states);
-            if (std::abs(trace.real() - 1.0) < tol && std::abs(trace.imag()) < tol){
-                std::cout << "Trace of the Density Matrix from statevector constructed is correct...✅ " << '\n';
-            }
-            else{
-                std::cout << "Trace of the Density Matrix from statevector constructed is NOT correct...❌" << '\n';
-            }
-        }
-        
-        void testHermicityofPsiMatrix(){
-
-            bool isHermitian = checkHermicity(psi_matrix,num_states);
-            if (isHermitian){
-                std::cout << "Density Matrix from statevector is Hermitian ✅" << "\n" << std::endl;
-            }
-            else{
-                std::cout << "Density Matrix from statevector is NOT Hermitian ❌" << "\n" << std::endl;
-            }
-        }
-
-        void testPositiveSemiDefinitivityofPsiMatrix(){
-            // bool isPositiveSemiDefinite = checkPositiveSemiDefinitivity(psi_matrix,num_states);
-            bool isPositiveSemiDefinite = true;
-            auto es = findEigenvalues(psi_matrix, num_states);
-            for (int i = 0; i < es.size(); i++){
-                if (es[i] < -tol) {isPositiveSemiDefinite= false;} // allow small negative tol due to FP
-            }
-            if (isPositiveSemiDefinite){
-                std::cout << "Density Matrix from statevector is Positive Semi-Definite ✅" << "\n" << std::endl;
-            }
-            else{
-                std::cout << "Density Matrix from statevector is NOT Positive Semi-Definite ❌" << "\n" << std::endl;
-            }
-        }
-};
+    };
 
 class TestHamiltonian{
 
-    private:
-        const std::vector<Complex>& hamiltonian;
-        int num_states;
-
     public:
-
-        TestHamiltonian(const std::vector<Complex>& hamiltonian_, int num_states_) : hamiltonian(hamiltonian_), num_states(num_states_){}
-
-        void testHermicity(){
+        void testHermicity(const std::vector<Complex>& hamiltonian, int num_states){
             bool isHermitian = checkHermicity(hamiltonian, num_states);
-            if (isHermitian){
-                std::cout << "Hamiltonian is Hermitian ✅" << "\n" << std::endl;
-            }
-            else{
-                std::cout << "Hamitonian is NOT Hermitian ❌" << "\n" << std::endl;
-            }
+            printResult(isHermitian, "Hermicity of Hamiltonian" );
         }
 
-        void testSumofEigenvalues(){        
+        void testSumofEigenvalues(const std::vector<Complex>& hamiltonian, int num_states){        
             Eigen::VectorXd es = findEigenvalues(hamiltonian, num_states);
             Complex trace = computeTrace(hamiltonian,num_states);
             Complex sum_eigs = es.sum();
 
             if (std::abs(sum_eigs.real()) < 1e-12) sum_eigs.real(0.0);
             if (std::abs(sum_eigs.imag()) < 1e-12) sum_eigs.imag(0.0);
-            if (trace==sum_eigs){
-                std::cout << "Sum of Eigenvalues = Sum of Trace ✅" << std::endl;
-            }
-            else{
-                std::cout << "Sum of Eigenvalues = Sum of Trace ❌" << std::endl;
-            }
+            printResult(trace==sum_eigs, "Sum of Eigenvalues");
 
         }
 
-        void test1QHamiltonian(const std::vector<Complex>& ref){
+        void testHamiltonian(const std::vector<Complex>& hamiltonian, const std::vector<Complex>& ref){
 
-            //std::vector<Complex> ref = {Complex(0,0), Complex(1,0), Complex(0,0), Complex(1,0)};
-            std::vector<Complex> ham = constructHamiltonian(1,2,1.0,1.0);
-            if (vectorEqual(ham,ref)){
-                std::cout << "Single Qubit TFIM Hamiltonian is Correct ✅" << std::endl;
-            }
-            else{
-                std::cout << "Single Qubit TFIM Hamiltonian is NOT Correct ❌" << std::endl;
-            }
+            printResult(vectorEqual(hamiltonian,ref), "Hamiltonian Unit Test");
+        }
+
+
+};
+
+class TestJumpOperator{
+
+
+    public:
+
+        void testJumpOperator(const std::vector<Complex>& mat, const std::vector<Complex>& ref){
+
+            printResult(vectorEqual(mat,ref), "Jump Operator Unit Test");
+        }
+
+        void testCyclicProperties(const std::vector<Complex>& mat, const std::vector<Complex>& rho, int num_states, double tol = 1e-12){
+
+            std::vector<Complex> mat_trans = hermitian(mat, num_states);
+
+            // Calculate Tr(J*rho*J_dagger)
+            std::vector<Complex> temp1m = matrixMultiplication(mat, rho, num_states, num_states, num_states);
+            std::vector<Complex> M1 = matrixMultiplication(temp1m, mat_trans, num_states, num_states, num_states);
+            Complex trace1 = computeTrace(M1, num_states);
+
+            // Calculate Tr(J_dagger*J*rho)
+            std::vector<Complex> temp2m = matrixMultiplication(mat_trans, mat, num_states, num_states, num_states);
+            std::vector<Complex> M2 = matrixMultiplication(temp2m, rho, num_states, num_states, num_states);
+            Complex trace2 = computeTrace(M2, num_states);
+
+            bool isCyclic = std::abs(trace1 - trace2) < tol;
+
+            printResult(isCyclic, "Cyclic Property of Jump Operator");
 
         }
 
-        void test2QHamiltonian(const std::vector<Complex>& ref){
-
-            // std::vector<Complex> ref = {Complex(1,0), Complex(1,0), Complex(1,0),Complex(0,0),
-            //                             Complex(1,0), Complex(-1,0), Complex(0,0), Complex(1,0),
-            //                             Complex(1,0), Complex(0,0), Complex(-1,0), Complex(1,0),
-            //                             Complex(0,0), Complex(1,0), Complex(1,0), Complex(1,1)
-            //                         };
-            
-            std::vector<Complex> ham = constructHamiltonian(2,4,1.0,1.0);
-            if (vectorEqual(ham,ref)){
-                std::cout << "Two Qubit TFIM Hamiltonian is Correct ✅" << std::endl;
-            }
-            else{
-                std::cout << "Two Qubit TFIM Hamiltonian is NOT Correct ❌" << std::endl;
-            }
-             
-        }
-
+        
 };
 
 int main(){
@@ -191,40 +108,106 @@ int main(){
         Complex (1.0 / std::sqrt(2.0)) 
     };
 
-    TestDensityMatrix DensitMatrixTester(N, psi);
-    DensitMatrixTester.testTraceofRandomMatrix();
-    DensitMatrixTester.testHermicityofRandomMatrix();
-    DensitMatrixTester.testPositiveSemiDefinitivityofRandomMatrix();
-    DensitMatrixTester.testTraceofPsiMatrix();
-    DensitMatrixTester.testHermicityofPsiMatrix();
-    DensitMatrixTester.testPositiveSemiDefinitivityofPsiMatrix();
+    std::vector<Complex> matrix = constructRandomRho(num_states);
+    std::vector<Complex> psi_matrix = constructRhoFromStatevector(psi);
+    
+    std::cout << "\nRunning Tests for Random Density Matrix ..🔬" << "\n";
+    TestDensityMatrix DensitMatrixTester;
+    DensitMatrixTester.testTrace(matrix,num_states);
+    DensitMatrixTester.testHermicity(matrix, num_states);
+    DensitMatrixTester.testPositiveSemiDefinitivity(matrix, num_states);
+
+    std::cout << "\nRunning Tests for GHZ Density Matrix ..🔬" << "\n";
+    DensitMatrixTester.testTrace(psi_matrix,num_states);
+    DensitMatrixTester.testHermicity(psi_matrix, num_states);
+    DensitMatrixTester.testPositiveSemiDefinitivity(psi_matrix, num_states);
+ 
 
     // Hamiltonian Testing 
-
     double J = 1.0;
     double h = 1.0;
-
     std::vector<Complex> test_hamiltonian = constructHamiltonian(N, num_states, J, h);
-    // Eigen::VectorXd evs = findEigenvalues(test_hamiltonian,num_states);
-    // std::cout << evs.transpose()<<std::endl;
-    TestHamiltonian HamiltonianTester(test_hamiltonian, num_states);
-    HamiltonianTester.testHermicity();
-    HamiltonianTester.testSumofEigenvalues();
+
+    TestHamiltonian HamiltonianTester;
+    std::cout << "\nRunning Tests for Hamilitonian ..🔬" << "\n";
+    HamiltonianTester.testHermicity(test_hamiltonian, num_states);
+    HamiltonianTester.testSumofEigenvalues(test_hamiltonian, num_states);
 
     //TFIM unit tests
+    std::cout << "\nRunning Tests for Single Qubit Hamilitonian ..🔬" << "\n";
     std::vector<Complex> ref1q = {Complex(0,0), Complex(-1,0), Complex(-1,0), Complex(0,0)};
-    // std::vector<Complex> ham1q = constructHamiltonian(1,2,1.0,1.0);
+    std::vector<Complex> ham1q = constructHamiltonian(1,2,1.0,1.0);
+    HamiltonianTester.testHamiltonian(ham1q, ref1q);
+    std::cout << "\nRunning Tests for Two Qubit Hamilitonian ..🔬" << "\n";    
     std::vector<Complex> ref2q = {Complex(-1,0), Complex(-1,0), Complex(-1,0),Complex(0,0),
                                 Complex(-1,0), Complex(1,0), Complex(0,0), Complex(-1,0),
                                 Complex(-1,0), Complex(0,0), Complex(1,0), Complex(-1,0),
                                 Complex(0,0), Complex(-1,0), Complex(-1,0), Complex(-1,0)
                                 };
+    std::vector<Complex> ham2q = constructHamiltonian(2,4,1.0,1.0);
+    HamiltonianTester.testHamiltonian(ham2q, ref2q);
 
-    // std::vector<Complex> ham2q = constructHamiltonian(2,4,1.0,1.0);
-    // printMatrix(ref2q, 4);
-    // printMatrix(ham2q, 4);
 
-    HamiltonianTester.test1QHamiltonian(ref1q);
-    HamiltonianTester.test2QHamiltonian(ref2q);
+    //Jump Operator testing
+    std::vector<Complex> Identity = {Complex(1,0), Complex(0,0), Complex(0,0), Complex(1,0)};
+    std::vector<Complex> SigmaMinus = {Complex(0,0), Complex(1,0), Complex(0,0), Complex(0,0)};
+    std::vector<Complex> SigmaPlus = {Complex(0,0), Complex(0,0), Complex(1,0), Complex(0,0)};
+    std::vector<Complex> SigmaZ = {Complex(1,0), Complex(0,0), Complex(0,0), Complex(-1,0)};
+
+    DecayType damping = DecayType::Damping;
+    DecayType pumping = DecayType::Pumping;
+    DecayType dephasing = DecayType::Dephasing;
+
+    // constructing jump operators for N=1 and k=1
+    std::vector<Complex> mat11m = constructJumpOperator(1,2,1,1.0,damping);
+    std::vector<Complex> mat11p = constructJumpOperator(1,2,1,1.0,pumping);
+    std::vector<Complex> mat11z = constructJumpOperator(1,2,1,1.0,dephasing);
+
+    std::cout << "\nRunning Unit Tests for Single Qubit Jump Operators ..🔬" << "\n";
+    TestJumpOperator JumpOperatorTester;
+    JumpOperatorTester.testJumpOperator(mat11m,SigmaMinus);
+    JumpOperatorTester.testJumpOperator(mat11p,SigmaPlus);
+    JumpOperatorTester.testJumpOperator(mat11z,SigmaZ);
+
+     // constructing jump operators for N=2 
+    std::vector<Complex> mat21m = constructJumpOperator(2,4,1,1.0,damping);
+    std::vector<Complex> mat22m = constructJumpOperator(2,4,2,1.0,damping);
+    std::vector<Complex> m1 = kroneckerProduct(Identity, 2, SigmaMinus, 2);
+    std::vector<Complex> m2 = kroneckerProduct(SigmaMinus, 2, Identity, 2);
+
+    std::cout << "\nRunning Unit Tests for Two Qubit Damping Jump Operators ..🔬" << "\n";
+    JumpOperatorTester.testJumpOperator(mat21m,m1);
+    JumpOperatorTester.testJumpOperator(mat22m,m2);
+
+    std::vector<Complex> mat21p = constructJumpOperator(2,4,1,1.0,pumping);
+    std::vector<Complex> mat22p = constructJumpOperator(2,4,2,1.0,pumping);
+    std::vector<Complex> p1 = kroneckerProduct(Identity, 2, SigmaPlus, 2);
+    std::vector<Complex> p2 = kroneckerProduct(SigmaPlus, 2, Identity, 2);
+
+    std::cout << "\nRunning Unit Tests for Two Qubit Pumping Jump Operators ..🔬" << "\n";
+    JumpOperatorTester.testJumpOperator(mat21p,p1);
+    JumpOperatorTester.testJumpOperator(mat22p,p2);
+
+    std::vector<Complex> mat21z = constructJumpOperator(2,4,1,1.0,dephasing);
+    std::vector<Complex> mat22z = constructJumpOperator(2,4,2,1.0,dephasing);
+    std::vector<Complex> z1 = kroneckerProduct(Identity, 2, SigmaZ, 2);
+    std::vector<Complex> z2 = kroneckerProduct(SigmaZ, 2, Identity, 2);
+
+    std::cout << "\nRunning Unit Tests for Two Qubit Dephasing Jump Operators ..🔬" << "\n";
+    JumpOperatorTester.testJumpOperator(mat21z,z1);
+    JumpOperatorTester.testJumpOperator(mat22z,z2);
+
+    std::cout << "\nTesting Cyclic Properties of Pumping Jump Operators..🔬" << std::endl;
+
+
+    std::vector<Complex> mat32m = constructJumpOperator(N,num_states,2,1.0,damping);
+    JumpOperatorTester.testCyclicProperties(mat32m, matrix, num_states);
+
+    std::vector<Complex> mat31p = constructJumpOperator(N, num_states, 1, 1.0, pumping);
+    JumpOperatorTester.testCyclicProperties(mat31p, matrix, num_states);
+
+    std::vector<Complex> mat33z = constructJumpOperator(N, num_states, 3, 1.0, dephasing);
+    JumpOperatorTester.testCyclicProperties(mat33z, matrix, num_states);
+
     
 }
