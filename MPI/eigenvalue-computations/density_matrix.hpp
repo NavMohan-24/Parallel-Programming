@@ -1,5 +1,5 @@
-#ifndef RANDOM_RHO
-#define RANDOM_RHO
+#ifndef DENSITY_MATRIX_HPP
+#define DENSITY_MATRIX_HPP
 
 #include <vector>
 #include <iostream>
