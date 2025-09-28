@@ -1,3 +1,6 @@
+#ifndef UTILS_HPP
+#define UTILS_HPP
+
 #include <iomanip>
 #include <vector>
 #include <iostream>
@@ -35,3 +38,5 @@ Eigen::VectorXd findEigenvalues(const std::vector<Complex>& A, int N);
 std::vector<Complex> hermitian(const std::vector<Complex>& A, int N);
 
 void printResult(bool condition, const std::string& testName);
+
+#endif
