@@ -18,17 +18,23 @@ std::vector<Complex> constructRandomRho(int num_states){
     std::vector<Complex> A(num_states*num_states);
     std::vector<Complex> rho(num_states*num_states);
 
-    
-    std::normal_distribution<double> dist(0.0,1.0);
+    #pragma omp parallel shared(A)
+    {
 
-    #pragma omp parallel for collapse(2) schedule(dynamic) shared(A) shared(dist)
-    for (int i = 0; i < num_states ; i++){
-        for (int j = 0; j < num_states ; j++){
-            std::random_device rd;
-            std::mt19937 gen(rd()+omp_get_thread_num()); //generate seed.
-            A[i*num_states+j] = genMatrixElements(gen,dist);
+        std::normal_distribution<double> dist(0.0,1.0);
+        std::random_device rd;
+        std::seed_seq seq{rd(),rd(),rd(),static_cast<unsigned>(omp_get_thread_num())}; //seeding class that takes few seed values and expand them into many high-quality seed values.
+        std::mt19937 gen(seq);
+
+        #pragma omp for collapse(2) schedule(static)
+        for (int i = 0; i < num_states ; i++){
+            for (int j = 0; j < num_states ; j++){ 
+                A[i*num_states+j] = genMatrixElements(gen,dist);
+            }
         }
+
     }
+    
     Complex alpha = {1.0, 0.0}; // make alpha and beta complex and pass by reference
     Complex beta  = {0.0, 0.0};
 
