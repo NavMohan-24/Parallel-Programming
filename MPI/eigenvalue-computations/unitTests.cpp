@@ -106,7 +106,7 @@ class TestLinbladian{
         {
             Complex trace = computeTrace(lrho,num_states);
             printResult((std::abs(trace.real()-0.0) < tol && (std::abs(trace.imag()-0.0) < tol)), "Trace of the Linbladian");
-            std::cout<< trace <<std::endl;
+            //std::cout<< trace <<std::endl;
 
         }
 
@@ -116,7 +116,7 @@ class TestLinbladian{
             isHermitian = checkHermicity(lrho, num_states);
             printResult(isHermitian, "Hermicity of Linbladian");
 
-            printMatrix(lrho, num_states);
+            //printMatrix(lrho, num_states);
         }
 
 
