@@ -5,6 +5,7 @@
 #include <iostream>
 #include <complex>
 #include <boost/dynamic_bitset.hpp>
+#include<omp.h>
 
 
 using Complex = std::complex<double>;
