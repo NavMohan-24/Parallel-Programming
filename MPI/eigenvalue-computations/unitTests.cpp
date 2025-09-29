@@ -2,6 +2,7 @@
 #include "hamiltonian.hpp"
 #include "jump_operator.hpp"
 #include "utils.hpp"
+#include "linbladian.hpp"
 
 
 class TestDensityMatrix{  
@@ -89,6 +90,36 @@ class TestJumpOperator{
         }
 
         
+};
+
+class TestLinbladian{
+
+    private:
+        const std::vector<Complex>& lrho;
+        int num_states;
+        double tol;
+
+    public:
+        TestLinbladian(const std::vector<Complex>& lrho_, int num_states_) : lrho(lrho_), num_states(num_states_), tol(1e-12){};
+
+        void testTrace()
+        {
+            Complex trace = computeTrace(lrho,num_states);
+            printResult((std::abs(trace.real()-0.0) < tol && (std::abs(trace.imag()-0.0) < tol)), "Trace of the Linbladian");
+            std::cout<< trace <<std::endl;
+
+        }
+
+        void testHermitian()
+        {
+            bool isHermitian;
+            isHermitian = checkHermicity(lrho, num_states);
+            printResult(isHermitian, "Hermicity of Linbladian");
+
+            printMatrix(lrho, num_states);
+        }
+
+
 };
 
 int main(){
@@ -198,16 +229,20 @@ int main(){
     JumpOperatorTester.testJumpOperator(mat22z,z2);
 
     std::cout << "\nTesting Cyclic Properties of Pumping Jump Operators..🔬" << std::endl;
-
-
     std::vector<Complex> mat32m = constructJumpOperator(N,num_states,2,1.0,damping);
     JumpOperatorTester.testCyclicProperties(mat32m, matrix, num_states);
-
     std::vector<Complex> mat31p = constructJumpOperator(N, num_states, 1, 1.0, pumping);
     JumpOperatorTester.testCyclicProperties(mat31p, matrix, num_states);
-
     std::vector<Complex> mat33z = constructJumpOperator(N, num_states, 3, 1.0, dephasing);
     JumpOperatorTester.testCyclicProperties(mat33z, matrix, num_states);
 
+    std::cout << "\nTesting action of Linbladian on density matrix..🔬" << std::endl;
+    
+    LinbladianSolver LS(test_hamiltonian, N);
+    std::vector<Complex> matrix_new = LS.solve(matrix);
+
+    TestLinbladian LinbladTester(matrix_new,num_states);
+    LinbladTester.testHermitian();
+    LinbladTester.testTrace();
     
 }
