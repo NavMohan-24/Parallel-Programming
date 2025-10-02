@@ -1,6 +1,24 @@
 #include "linbladian.hpp"
 
 
+inline Complex cleanMatrixElements(const Complex& z, double tol=1e-12){
+    double re = (std::abs(z.real()) < tol) ? 0: z.real();
+    double img = (std::abs(z.imag()) < tol) ? 0: z.imag();
+    return {re, img};
+}
+
+inline Complex computeTrace(const std::vector<Complex>& mat, int M){
+
+    // assumes a square matrix
+    Complex trace(0.0, 0.0);
+    for (int i = 0; i < M; i++){
+        trace += mat[i*M + i];
+    }
+    return trace;
+    
+}
+
+//________________________________
 
 LinbladianSolver::LinbladianSolver(const std::vector<Complex>& hamiltonian_,
                 int N_, double rate_, DecayType decay_, Scope scope_)
@@ -9,7 +27,7 @@ LinbladianSolver::LinbladianSolver(const std::vector<Complex>& hamiltonian_,
                 // validate the hamiltonian in the constructor
 
 
-std::vector<Complex> LinbladianSolver::solve(const std::vector<Complex>& rho)
+std::vector<Complex> LinbladianSolver::L_apply(const std::vector<Complex>& rho)
 {
     // validate the rho
 
@@ -20,39 +38,122 @@ std::vector<Complex> LinbladianSolver::solve(const std::vector<Complex>& rho)
     Complex i_unit(0.0, 1.0);
 
     for (int i = 0; i < num_states*num_states; i++){
-        linbladian[i] =  -i_unit*comm[i]- diss[i];
+        linbladian[i] =  cleanMatrixElements(i_unit*comm[i]- diss[i]);
     };
 
     return linbladian;
 };        
 
+std::vector<double> LinbladianSolver::HessenbergMatrix(const std::vector<Complex>& rho, int k, double tol)
+{   
+    //lambda function to calculate index
+    auto idx = [k](int i, int j){return i*(k+1)+j;};
 
-std::vector<Complex> LinbladianSolver::applyCommutator(const std::vector<Complex>& matA,const std::vector<Complex>& matB, int num_states)
+    // Hessenberg Matrix Initialization. 
+    // Elements are expected to be double since it is constructed from inner product between two Hermitian matrices
+    std::vector<double> H((k+1)*(k+1),0.0); 
+
+    // container to store kyrlov basis vectors
+    std::vector<std::vector<Complex>> basis(k+2);
+    
+    // normalize the input matrix
+    basis[0] = rho;
+    normalizeMatrix(basis[0],num_states);
+    
+
+    for (int j = 0; j <= k; j++){
+
+        // apply the Linbladian superoperator
+        basis[j+1] = L_apply(basis[j]);
+        
+        // orthogonalize density matrix
+        for (int i = 0; i <= j; i++)
+        {   
+            // compute Hessenberg matrix elements
+            H[idx(i,j)] = computeInnerProduct(basis[i],basis[j+1], num_states);
+
+            // substract the projection on basis[i]
+            for (int m = 0; m < num_states*num_states; m++){
+                basis[j+1][m] -= H[idx(i,j)]*basis[i][m];
+            }
+
+        }
+
+        if (j < k){
+            // compute Hessenberg matrix elements
+            double nf = computeInnerProduct(basis[j+1], basis[j+1], num_states);
+
+            if (nf < 1e-12){
+                throw std::runtime_error("Arnoldi Method Breakdown : Norm became zero");
+            }
+            H[idx(j+1,j)] = std::sqrt(nf);
+            //normalize basis[j+1]
+            normalizeMatrix(basis[j+1],num_states);
+
+        }        
+        
+    }
+    return H;
+}
+
+double LinbladianSolver::computeInnerProduct(const std::vector<Complex>& matA, const std::vector<Complex>& matB, int M, double tol)
+{
+    std::vector<Complex> matC(M*M);
+
+    Complex alpha = {1.0,0.0};
+    Complex beta = {0.0,0.0};
+
+    cblas_zgemm(CblasRowMajor, CblasConjTrans, CblasNoTrans,
+            M, M, M, &alpha, matA.data(),
+            M, matB.data(), M, &beta, matC.data(), M);
+    
+    Complex trace = computeTrace(matC, M);
+    Complex ctrace = cleanMatrixElements(trace);
+
+    if (std::abs(ctrace.imag()) < tol){
+        return ctrace.real();
+    }
+    else {
+        throw std::runtime_error("Norm is not real, Matrix is not Hermitian");
+    };
+}
+
+// while doing inplace modification matrix need to be passed by reference.
+void LinbladianSolver::normalizeMatrix(std::vector<Complex>& mat, int M){
+    //compute norm
+    double norm = computeInnerProduct(mat, mat, M);
+
+    //inplace modification of matrix elements
+    for (int i = 0; i < M*M; i++){
+        mat[i] = mat[i]/std::sqrt(norm);
+    };
+
+}
+
+std::vector<Complex> LinbladianSolver::applyCommutator(const std::vector<Complex>& matA,const std::vector<Complex>& matB, int M)
 {
 
     Complex alpha = {1.0,0.0};
     Complex beta =  {0.0,0.0};
 
-    std::vector<Complex> AB(num_states*num_states);
-    std::vector<Complex> BA(num_states*num_states);
+    std::vector<Complex> AB(M*M);
+    std::vector<Complex> BA(M*M);
     // std::vector<Complex> C(num_states*num_states);
 
     // AB = matA*matB (H * rho)
     cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
-        num_states, num_states, num_states, &alpha, matA.data(),
-        num_states, matB.data(), num_states, &beta, AB.data(), 
-        num_states
+        M, M, M, &alpha, matA.data(),
+        M, matB.data(), M, &beta, AB.data(), M
     );
 
     // BA = matB*matA (rho * H) 
     cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
-        num_states, num_states, num_states, &alpha, matB.data(),
-        num_states, matA.data(), num_states, &beta, BA.data(),
-        num_states
+        M, M, M, &alpha, matB.data(),
+        M, matA.data(), M, &beta, BA.data(), M
     );
 
     // Commutator = AB - BA
-    for (int i = 0; i < num_states*num_states; i++){
+    for (int i = 0; i < M*M; i++){
         AB[i] -= BA[i];
     };
 
@@ -60,30 +161,30 @@ std::vector<Complex> LinbladianSolver::applyCommutator(const std::vector<Complex
 
 };
 
-std::vector<Complex> LinbladianSolver::applyAntiCommutator(const std::vector<Complex>& matA,const std::vector<Complex>& matB, int num_states)
+std::vector<Complex> LinbladianSolver::applyAntiCommutator(const std::vector<Complex>& matA,const std::vector<Complex>& matB, int M)
 {
 
     Complex alpha = {1.0,0.0};
     Complex beta =  {0.0,0.0};
 
-    std::vector<Complex> AB(num_states*num_states);
-    std::vector<Complex> BA(num_states*num_states);
+    std::vector<Complex> AB(M*M);
+    std::vector<Complex> BA(M*M);
     
 
     // A = matA * matB
     cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
-        num_states, num_states, num_states, &alpha, matA.data(),
-        num_states, matB.data(), num_states, &beta, AB.data(), 
-        num_states
+        M, M, M, &alpha, matA.data(),
+        M, matB.data(), M, &beta, AB.data(), M
     );
+
     // A = matB * matA
     cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
-        num_states, num_states, num_states, &alpha, matB.data(),
-        num_states, matA.data(), num_states, &beta, BA.data(),
-        num_states
+        M, M, M, &alpha, matB.data(),
+        M, matA.data(), M, &beta, BA.data(), M
     );
+
     // Commutator = AB + BA
-    for (int i = 0; i < num_states*num_states; i++){
+    for (int i = 0; i < M*M; i++){
         AB[i] += BA[i];
     };
 
