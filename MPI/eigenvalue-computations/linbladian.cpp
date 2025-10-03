@@ -18,7 +18,7 @@ inline Complex computeTrace(const std::vector<Complex>& mat, int M){
     
 }
 
-//________________________________
+//_________________________________________________________________________
 
 LinbladianSolver::LinbladianSolver(const std::vector<Complex>& hamiltonian_,
                 int N_, double rate_, DecayType decay_, Scope scope_)
@@ -27,7 +27,7 @@ LinbladianSolver::LinbladianSolver(const std::vector<Complex>& hamiltonian_,
                 // validate the hamiltonian in the constructor
 
 
-std::vector<Complex> LinbladianSolver::L_apply(const std::vector<Complex>& rho)
+std::vector<Complex> LinbladianSolver::applyLinbladian(const std::vector<Complex>& rho)
 {
     // validate the rho
 
@@ -44,7 +44,7 @@ std::vector<Complex> LinbladianSolver::L_apply(const std::vector<Complex>& rho)
     return linbladian;
 };        
 
-std::vector<double> LinbladianSolver::HessenbergMatrix(const std::vector<Complex>& rho, int k, double tol)
+std::vector<double> LinbladianSolver::constructHessenbergMatrix(const std::vector<Complex>& rho, int k, double tol)
 {   
     //lambda function to calculate index
     auto idx = [k](int i, int j){return i*(k+1)+j;};
@@ -64,7 +64,7 @@ std::vector<double> LinbladianSolver::HessenbergMatrix(const std::vector<Complex
     for (int j = 0; j <= k; j++){
 
         // apply the Linbladian superoperator
-        basis[j+1] = L_apply(basis[j]);
+        basis[j+1] = applyLinbladian(basis[j]);
         
         // orthogonalize density matrix
         for (int i = 0; i <= j; i++)

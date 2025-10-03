@@ -1,7 +1,7 @@
 #ifndef LINBLADIAN_HPP
 #define LINBLADIAN_HPP
 
-#include "jump_operator.hpp"
+#include "jump_operator/jump_operator.hpp"
 #include <cblas.h>
 #include <omp.h>
 #include <vector>
@@ -29,9 +29,9 @@ class LinbladianSolver
                         DecayType decay_ = DecayType::Damping,  
                         Scope scope_ = Scope::Local);
 
-        std::vector<Complex>L_apply(const std::vector<Complex>& rho);
+        std::vector<Complex>applyLinbladian(const std::vector<Complex>& rho);
 
-        std::vector<double> HessenbergMatrix(const std::vector<Complex>& rho, int k, double tol = 1e-12);
+        std::vector<double> constructHessenbergMatrix(const std::vector<Complex>& rho, int k, double tol = 1e-12);
 
     protected:
         
