@@ -246,3 +246,41 @@ std::vector<Complex> LinbladianSolver::constructDissipator(const std::vector<Com
     return Dissipator;
 };
 
+#ifdef BUILD_MAIN
+#include "density_matrix/density_matrix.hpp"
+#include "hamiltonian/hamiltonian.hpp"
+#include "jump_operator/jump_operator.hpp"
+#include "utils.hpp"
+
+int main(){
+
+    int N = 3;
+    int num_states = 1 << N;
+    int K = 3;
+    double J = -1.0;
+    double h = 2.0;
+
+    std::vector<Complex> rho = constructRandomRho(num_states);
+    std::cout<<"Printing Random Matrix" << "\n";
+    printMatrix(rho, num_states);
+    std::cout<<"\n";
+
+    std::cout<<"Printing Hamiltonian" << "\n";
+    std::vector<Complex> hamiltonian = constructHamiltonian(N,num_states,J,h);
+    printMatrix(hamiltonian, num_states);
+    std::cout<<"\n";
+
+    LinbladianSolver LSolver(hamiltonian, N);
+    std::cout<<"Printing dRho" << "\n";
+    std::vector<Complex> rho_new = LSolver.applyLinbladian(rho);
+    printMatrix(rho_new, num_states);
+    std::cout<<"\n";
+
+    std::cout<<"Printing Hessenberg Matrix" << "\n";
+    std::vector<double> H = LSolver.constructHessenbergMatrix(rho, K);
+    printMatrix(H, K+1);
+    std::cout<<"\n";
+
+
+}
+#endif
