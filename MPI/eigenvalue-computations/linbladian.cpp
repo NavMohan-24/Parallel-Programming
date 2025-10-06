@@ -44,7 +44,9 @@ std::vector<Complex> LinbladianSolver::applyLinbladian(const std::vector<Complex
     return linbladian;
 };        
 
-std::vector<double> LinbladianSolver::constructHessenbergMatrix(const std::vector<Complex>& rho, int k, double tol)
+
+
+std::vector<double> LinbladianSolver::constructHessenbergMatrix(const std::vector<Complex>& initial_rho, int k, double tol)
 {   
     //lambda function to calculate index
     auto idx = [k](int i, int j){return i*(k+1)+j;};
@@ -57,7 +59,7 @@ std::vector<double> LinbladianSolver::constructHessenbergMatrix(const std::vecto
     std::vector<std::vector<Complex>> basis(k+2);
     
     // normalize the input matrix
-    basis[0] = rho;
+    basis[0] = initial_rho;
     normalizeMatrix(basis[0],num_states);
     
 
