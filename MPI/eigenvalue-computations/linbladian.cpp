@@ -56,44 +56,46 @@ std::vector<double> LinbladianSolver::constructHessenbergMatrix(const std::vecto
     std::vector<double> H((k+1)*(k+1),0.0); 
 
     // container to store kyrlov basis vectors
-    std::vector<std::vector<Complex>> basis(k+2);
+    // std::vector<std::vector<Complex>> basis(k+2);
+    kyrlov_basis.resize(k+2);
     
     // normalize the input matrix
-    basis[0] = initial_rho;
-    normalizeMatrix(basis[0],num_states);
+    kyrlov_basis[0] = initial_rho;
+    normalizeMatrix(kyrlov_basis[0],num_states);
     
 
     for (int j = 0; j <= k; j++){
 
         // apply the Linbladian superoperator
-        basis[j+1] = applyLinbladian(basis[j]);
+        kyrlov_basis[j+1] = applyLinbladian(kyrlov_basis[j]);
         
         // orthogonalize density matrix
         for (int i = 0; i <= j; i++)
         {   
             // compute Hessenberg matrix elements
-            H[idx(i,j)] = computeInnerProduct(basis[i],basis[j+1], num_states);
+            H[idx(i,j)] = computeInnerProduct(kyrlov_basis[i],kyrlov_basis[j+1], num_states);
 
             // substract the projection on basis[i]
             for (int m = 0; m < num_states*num_states; m++){
-                basis[j+1][m] -= H[idx(i,j)]*basis[i][m];
+                kyrlov_basis[j+1][m] -= H[idx(i,j)]*kyrlov_basis[i][m];
             }
 
         }
-
         if (j < k){
             // compute Hessenberg matrix elements
-            double nf = computeInnerProduct(basis[j+1], basis[j+1], num_states);
+            double nf = computeInnerProduct(kyrlov_basis[j+1], kyrlov_basis[j+1], num_states);
 
             if (nf < 1e-12){
                 throw std::runtime_error("Arnoldi Method Breakdown : Norm became zero");
             }
             H[idx(j+1,j)] = std::sqrt(nf);
+            
             //normalize basis[j+1]
-            normalizeMatrix(basis[j+1],num_states);
-
-        }        
-        
+            //normalizeMatrix(kyrlov_basis[j+1],num_states);
+            for (int i = 0; i < num_states*num_states; i++){
+                kyrlov_basis[j+1][i] /= std::sqrt(nf); 
+            };
+        }             
     }
     return H;
 }
@@ -122,12 +124,13 @@ double LinbladianSolver::computeInnerProduct(const std::vector<Complex>& matA, c
 
 // while doing inplace modification matrix need to be passed by reference.
 void LinbladianSolver::normalizeMatrix(std::vector<Complex>& mat, int M){
-    //compute norm
-    double norm = computeInnerProduct(mat, mat, M);
+
+    // set norm if norm argument is not specified
+    double n = computeInnerProduct(mat, mat, M); 
 
     //inplace modification of matrix elements
     for (int i = 0; i < M*M; i++){
-        mat[i] = mat[i]/std::sqrt(norm);
+        mat[i] /= std::sqrt(n); // * to extract double from std::optional<double>
     };
 
 }
@@ -267,6 +270,9 @@ int main(){
     printMatrix(rho, num_states);
     std::cout<<"\n";
 
+    bool isHermitian = checkHermicity(rho, num_states);
+    printResult(isHermitian, "Hermicity of rho");
+
     std::cout<<"Printing Hamiltonian" << "\n";
     std::vector<Complex> hamiltonian = constructHamiltonian(N,num_states,J,h);
     printMatrix(hamiltonian, num_states);
@@ -277,6 +283,8 @@ int main(){
     std::vector<Complex> rho_new = LSolver.applyLinbladian(rho);
     printMatrix(rho_new, num_states);
     std::cout<<"\n";
+    isHermitian = checkHermicity(rho_new, num_states);
+    printResult(isHermitian, "Hermicity of d_rho");
 
     std::cout<<"Printing Hessenberg Matrix" << "\n";
     std::vector<double> H = LSolver.constructHessenbergMatrix(rho, K);

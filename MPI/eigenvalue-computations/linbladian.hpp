@@ -7,6 +7,7 @@
 #include <vector>
 #include <complex>
 #include <stdexcept>
+#include <lapacke.h>
 
 using Complex = std::complex<double>;
 
@@ -20,6 +21,7 @@ class LinbladianSolver
         double rate = 1.0;
         DecayType decay = DecayType::Damping;
         Scope scope = Scope::Local;
+        std::vector<std::vector<Complex>> kyrlov_basis;
         
         
     public:
@@ -28,8 +30,9 @@ class LinbladianSolver
                         int N_, double rate_ = 1.0, 
                         DecayType decay_ = DecayType::Damping,  
                         Scope scope_ = Scope::Local);
-
         std::vector<Complex> applyLinbladian(const std::vector<Complex>& rho);
+        std::vector<double> diagonalize(const std::vector<Complex>& initial_rho, int k, double tol = 1e-12);
+        std::vector<double> constructHessenbergMatrix(const std::vector<Complex>& initial_rho, int k, double tol = 1e-12); // need to make it protected at end
 
 
     protected:
@@ -38,8 +41,8 @@ class LinbladianSolver
         std::vector<Complex> applyAntiCommutator(const std::vector<Complex>& matA,const std::vector<Complex>& matB, int M);
         std::vector<Complex> constructDissipator(const std::vector<Complex>& mat,int N, int num_states, double rate, DecayType decay, Scope scope);
         double computeInnerProduct(const std::vector<Complex>& matA, const std::vector<Complex>& matB, int M, double tol = 1e-12);
-        void normalizeMatrix(std::vector<Complex>& mat, int M);
-        std::vector<double> constructHessenbergMatrix(const std::vector<Complex>& initial_rho, int k, double tol = 1e-12);
+        void normalizeMatrix(std::vector<Complex>& mat, int M); // equivalent to setting norm = None
+        
     
 };
 
