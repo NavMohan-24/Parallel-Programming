@@ -11,6 +11,11 @@
 
 using Complex = std::complex<double>;
 
+struct EigenResult {
+    Complex eigenvalues;
+    std::vector<std::vector<Complex>> eigenvectors;
+};
+
 class LinbladianSolver
 {
 
