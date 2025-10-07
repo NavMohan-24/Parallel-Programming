@@ -25,8 +25,15 @@ std::vector<Complex> addMatrix(const std::vector<Complex>& A,
                                const std::vector<Complex>& B,
                                int N);
 
-void printMatrix(const std::vector<Complex>& M, int N);
-
+template<typename T>
+void printMatrix(const std::vector<T>& M, int N) {
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < N; j++) {
+            std::cout << M[i * N + j] << " ";
+        }
+        std::cout << std::endl;
+    }
+}
 Complex computeTrace(const std::vector<Complex>& A, int N);
 
 bool checkHermicity(const std::vector<Complex>& A, int N, double tol = 1e-12);

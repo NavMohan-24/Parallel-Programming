@@ -66,16 +66,17 @@ std::vector<Complex> addMatrix(const std::vector<Complex>& A,
     return C;
 }
 
-void printMatrix(const std::vector<Complex>& M, int N) {
-    for (int i = 0; i < N; i++) {
-        for (int j = 0; j < N; j++) {
-            std::cout << std::setw(10) << std::fixed << std::setprecision(2) 
-                      << M[i * N + j] << " ";
-        }
-        std::cout << std::endl;
-    }
-    std::cout << std::endl;
-}
+// template<typename T>
+// void printMatrix(const std::vector<T>& M, int N) {
+//     for (int i = 0; i < N; i++) {
+//         for (int j = 0; j < N; j++) {
+//             std::cout << std::setw(10) << std::fixed << std::setprecision(2) 
+//                       << M[i * N + j] << " ";
+//         }
+//         std::cout << std::endl;
+//     }
+//     std::cout << std::endl;
+// }
 
 Complex computeTrace(const std::vector<Complex>& A, int N){
 
