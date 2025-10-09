@@ -54,7 +54,7 @@ std::vector<Complex> constructDissipator(const std::vector<Complex>& rho, int N,
         //compute Jk^†​Jk
         Complex alpha = {0.5,0.0}; // 1/2 infront of anti commutator
         std::vector<Complex> K(num_states*num_states, Complex(0,0));
-        cblas_zgemm(CblasRowMajor, CblasTrans, CblasNoTrans,
+        cblas_zgemm(CblasRowMajor, CblasConjTrans, CblasNoTrans,
                     num_states, num_states, num_states,
                     &alpha, Jk.data(), num_states,
                     Jk.data(), num_states, 
@@ -131,7 +131,7 @@ int main(){
     int num_states = 1 << N;
     double k = 0.0;
 
-    std::vector<Complex> rho = createRandomRho(num_states);
+    std::vector<Complex> rho = constructRandomRho(num_states);
     std::vector<Complex> Dissipator = constructDissipator(rho, N, num_states,k);
     std::vector<Complex> ref(num_states*num_states, Complex(0,0));
 
@@ -153,7 +153,7 @@ int main(){
         Complex (1.0 / std::sqrt(2.0)) 
     };
  
-    rho = createRhoFromStatevector(psi);
+    rho = constructRhoFromStatevector(psi);
     Dissipator = constructDissipator(rho, N, num_states,k);
 
     ref = {0.5, -0.25, -0.25, -0.5};
@@ -170,7 +170,7 @@ int main(){
     num_states = 1 << N;
     k = 1.0;
 
-    rho = createRandomRho(num_states);
+    rho = constructRandomRho(num_states);
     Dissipator = constructDissipator(rho, N, num_states, k);
 
     Complex trace = computeTrace(Dissipator,num_states);
