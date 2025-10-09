@@ -74,7 +74,7 @@ std::vector<Complex> constructDissipator(const std::vector<Complex>& rho, int N,
                  );
         //compute L_k ​ρ L_k^†
         std::vector<Complex> FP(num_states*num_states, Complex(0,0));
-        cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasTrans,
+        cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasConjTrans,
                     num_states, num_states, num_states,
                     &alpha, tempA.data(), num_states,
                     Jk.data(), num_states, 
