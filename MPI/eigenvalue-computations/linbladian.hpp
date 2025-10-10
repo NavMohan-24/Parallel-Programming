@@ -26,7 +26,8 @@ class LinbladianSolver
         double rate = 1.0;
         DecayType decay = DecayType::Damping;
         Scope scope = Scope::Local;
-        std::vector<std::vector<Complex>> kyrlov_basis;
+        //std::vector<std::vector<Complex>> kyrlov_basis;
+        std::vector<Complex>  kyrlov_basis_flatten;
         
         
     public:
