@@ -347,15 +347,30 @@ std::vector<Complex> LinbladianSolver::constructDissipator(const std::vector<Com
 
 int main(){
 
-    int N = 3;
+    int N = 2;
     int num_states = 1 << N;
-    int K = 3;
+    int K = 10;
     double J = -1.0;
-    double h = 2.0;
+    double h = 0.01;
 
     std::vector<Complex> rho = constructRandomRho(num_states);
+    /*s
+    td::vector<Complex> psi = {
+        Complex (1.0 / std::sqrt(2.0)),
+        Complex (0.0),
+        Complex (0.0), 
+        Complex (0.0), 
+        Complex (0.0), 
+        Complex (0.0), 
+        Complex (0.0),
+        Complex (1.0 / std::sqrt(2.0)) 
+        };
+
+    std::vector<Complex> rho = constructRhoFromStatevector(psi);
+    */
+
     std::cout<<"Printing Random Matrix" << "\n";
-    printMatrix(rho, num_states);
+    printMatrix(rho, num_states, num_states);
     std::cout<<"\n";
 
     bool isHermitian = checkHermicity(rho, num_states);
@@ -363,22 +378,27 @@ int main(){
 
     std::cout<<"Printing Hamiltonian" << "\n";
     std::vector<Complex> hamiltonian = constructHamiltonian(N,num_states,J,h);
-    printMatrix(hamiltonian, num_states);
+    printMatrix(hamiltonian, num_states, num_states);
     std::cout<<"\n";
 
     LinbladianSolver LSolver(hamiltonian, N);
     std::cout<<"Printing dRho" << "\n";
     std::vector<Complex> rho_new = LSolver.applyLinbladian(rho);
-    printMatrix(rho_new, num_states);
+    printMatrix(rho_new, num_states, num_states);
     std::cout<<"\n";
     isHermitian = checkHermicity(rho_new, num_states);
     printResult(isHermitian, "Hermicity of d_rho");
 
     std::cout<<"Printing Hessenberg Matrix" << "\n";
     std::vector<double> H = LSolver.constructHessenbergMatrix(rho, K);
-    printMatrix(H, K+1);
+    printMatrix(H, K+1, K+1);
     std::cout<<"\n";
 
+    EigenResult result = LSolver.diagonalize(rho, K);
+    printMatrix(result.eigenvectors, num_states*num_states, K+1);
 
+    for(int k = 0; k < K+1; k++){
+        std::cout << "eigenvalue " << k+1 << ":" << result.eigenvalues[k] << "\n";
+    }
 }
 #endif
