@@ -108,6 +108,86 @@ std::vector<double> LinbladianSolver::constructHessenbergMatrix(const std::vecto
     return H;
 }
 
+EigenResult LinbladianSolver::diagonalize(const std::vector<Complex>& init_rho, int k, double tol){
+
+    std::vector<double> H = constructHessenbergMatrix(init_rho, k, tol);
+    EigenResult result;
+    
+
+    int n = k+1;  // dimension of Hessenberg matrix (k+1) x (k+1)
+    int ilo = 1, ihi = n; // lapack allows working with submatrices - here we have chosen full matrix
+
+    std::vector<double> wr(n), wi(n); // containers to store real and imaginary parts of eigenvalues computed.
+    std::vector<double> Z(n*n, 0.0); // container to store Schur vectors.
+    // Initialize with zeros
+    
+    // Initialize Z as identity matrix
+    for (int i = 0; i < n; i++) {
+        Z[i*n + i] = 1.0;
+    }
+
+    // converting H to Schur form + Schur vectors using QR algorithm
+    int info = LAPACKE_dhseqr(LAPACK_ROW_MAJOR,
+        'S', 'V',  
+        n, ilo, ihi,
+        H.data(), n, 
+        wr.data(), wi.data(),
+        Z.data(), n
+    ); 
+    
+    // checking whether Schur form construction is success
+    if (info != 0) {
+        throw std::runtime_error("DHSEQR failed in diagonalizing the matrix");
+    }
+
+    // adding eigenvalues to output struct - eigen values of Hessenberg matrix approximates that of Linbladian
+    result.eigenvalues.resize(n);
+    for (int i=0; i < n; i++){
+        result.eigenvalues[i] = std::complex<double>(wr[i], wi[i]);
+    };
+    
+    // diagonalizing schur form of H
+    std::vector<double> VR(n*n); // container to store right eigenvector of schur form.
+    int mm = n; // leading dimension matrix to store right eigen vector (row of VR)
+    int m; // number of eigenvectors to be found (coloum of the VR )
+    info = LAPACKE_dtrevc(
+        LAPACK_ROW_MAJOR,
+        'R', 'A',
+        nullptr, n,
+        H.data(), n,
+        nullptr, n,
+        VR.data(), n,
+        mm, &m
+    );
+
+    if (info != 0) {
+        throw std::runtime_error("DTREVC failed in diagonalizing the matrix");
+    }
+
+    // finding eigenvector of Hessenberg Matrix
+    std::vector<double> eigenvecs_H(n*n);
+    cblas_dgemm(
+        CblasRowMajor, CblasNoTrans, CblasNoTrans,
+        n, n, n, 1.0, Z.data(), n,
+        VR.data(), n, 0.0,
+        eigenvecs_H.data(), n 
+    );
+
+    // transforming eigenvectors of Hessenberg matrix to density matrix basis
+    result.eigenvectors.resize(num_states*num_states*n);
+    Complex alpha = {1.0, 0.0};
+    Complex beta = {0.0, 0.0};
+    cblas_zgemm(
+        CblasRowMajor, CblasNoTrans, CblasNoTrans,
+        num_states*num_states, n, n, &alpha, 
+        kyrlov_basis_flatten.data(), n,
+        eigenvecs_H.data(), n, &beta,
+        result.eigenvectors.data(), n 
+    );
+    return result;
+
+}
+
 double LinbladianSolver::computeInnerProduct(const std::vector<Complex>& matA, const std::vector<Complex>& matB, int M, double tol)
 {
     std::vector<Complex> matC(M*M);
