@@ -302,7 +302,7 @@ std::vector<Complex> LinbladianSolver::constructDissipator(const std::vector<Com
         Complex alpha = {0.5,0.0}; // 1/2 infront of anti commutator
 
         std::vector<Complex> K(num_states*num_states, Complex(0,0));
-        cblas_zgemm(CblasRowMajor, CblasTrans, CblasNoTrans,
+        cblas_zgemm(CblasRowMajor, CblasConjTrans, CblasNoTrans,
                     num_states, num_states, num_states,
                     &alpha, Jk.data(), num_states,
                     Jk.data(), num_states, 
@@ -324,7 +324,7 @@ std::vector<Complex> LinbladianSolver::constructDissipator(const std::vector<Com
 
         //compute L_k ​ρ L_k^†
         std::vector<Complex> FP(num_states*num_states, Complex(0,0));
-        cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasTrans,
+        cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasConjTrans,
                     num_states, num_states, num_states,
                     &alpha, tempA.data(), num_states,
                     Jk.data(), num_states, 
