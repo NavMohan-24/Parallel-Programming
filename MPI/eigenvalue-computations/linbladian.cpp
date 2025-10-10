@@ -35,10 +35,10 @@ std::vector<Complex> LinbladianSolver::applyLinbladian(const std::vector<Complex
     std::vector<Complex> diss = constructDissipator(rho, N, num_states, rate, decay, scope);
     std::vector<Complex> linbladian(num_states*num_states);
 
-    Complex i_unit(0.0, 1.0);
+    Complex i_unit(0.0, -1.0);
 
     for (int i = 0; i < num_states*num_states; i++){
-        linbladian[i] =  cleanMatrixElements(i_unit*comm[i]- diss[i]);
+        linbladian[i] =  cleanMatrixElements(i_unit*comm[i]+diss[i]);
     };
 
     return linbladian;
