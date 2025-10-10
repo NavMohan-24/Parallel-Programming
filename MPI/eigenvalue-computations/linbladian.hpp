@@ -12,8 +12,8 @@
 using Complex = std::complex<double>;
 
 struct EigenResult {
-    Complex eigenvalues;
-    std::vector<std::vector<Complex>> eigenvectors;
+    std::vector<Complex> eigenvalues;
+    std::vector<Complex> eigenvectors;
 };
 
 class LinbladianSolver
@@ -37,7 +37,7 @@ class LinbladianSolver
                         DecayType decay_ = DecayType::Damping,  
                         Scope scope_ = Scope::Local);
         std::vector<Complex> applyLinbladian(const std::vector<Complex>& rho);
-        std::vector<double> diagonalize(const std::vector<Complex>& initial_rho, int k, double tol = 1e-12);
+        EigenResult diagonalize(const std::vector<Complex>& initial_rho, int k, double tol = 1e-12);
         std::vector<double> constructHessenbergMatrix(const std::vector<Complex>& initial_rho, int k, double tol = 1e-12); // need to make it protected at end
 
 
