@@ -56,8 +56,9 @@ std::vector<double> LinbladianSolver::constructHessenbergMatrix(const std::vecto
     std::vector<double> H((k+1)*(k+1),0.0); 
 
     // container to store kyrlov basis vectors
-    // std::vector<std::vector<Complex>> basis(k+2);
-    kyrlov_basis.resize(k+2);
+    std::vector<std::vector<Complex>> kyrlov_basis(k+2);
+    //kyrlov_basis.resize(k+2);
+    kyrlov_basis_flatten.resize(num_states*num_states*(k+1));
     
     // normalize the input matrix
     kyrlov_basis[0] = initial_rho;
@@ -97,6 +98,13 @@ std::vector<double> LinbladianSolver::constructHessenbergMatrix(const std::vecto
             };
         }             
     }
+    //auto idx_flat = [this](int row, int col){return row*num_states*num_states+col;}; // num_states is a member variable so we need to capture either `this` pointer or '&` 
+    for (int i = 0; i < k+1; i++){
+        for (int j = 0; j < num_states*num_states; j++){
+            kyrlov_basis_flatten[j*(k+1) + i] = kyrlov_basis[i][j]; // flattening and storing it in transposed manner
+        }
+    }
+
     return H;
 }
 
