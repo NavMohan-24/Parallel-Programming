@@ -1,7 +1,8 @@
 #include "linbladian.hpp"
+#include "utils.hpp"
 
 
-inline Complex cleanMatrixElements(const Complex& z, double tol=1e-12){
+inline Complex cleanMatrixElements(const Complex& z, double tol=1e-8){
     double re = (std::abs(z.real()) < tol) ? 0: z.real();
     double img = (std::abs(z.imag()) < tol) ? 0: z.imag();
     return {re, img};
@@ -64,11 +65,18 @@ std::vector<double> LinbladianSolver::constructHessenbergMatrix(const std::vecto
     kyrlov_basis[0] = initial_rho;
     normalizeMatrix(kyrlov_basis[0],num_states);
     
-
+    bool isHermitian;
     for (int j = 0; j <= k; j++){
 
         // apply the Linbladian superoperator
         kyrlov_basis[j+1] = applyLinbladian(kyrlov_basis[j]);
+        // isHermitian = checkHermicity(kyrlov_basis[j+1],num_states);
+        // if (!isHermitian){
+        //     std::cout<<  j+1 <<"th eigenvector is not hermitian"<< "\n";\
+        //     printMatrix(kyrlov_basis[j+1], num_states, num_states);
+        //     throw std::runtime_error("Matrix is not Hermitian");
+
+        // };
         
         // orthogonalize density matrix
         for (int i = 0; i <= j; i++)
@@ -173,6 +181,13 @@ EigenResult LinbladianSolver::diagonalize(const std::vector<Complex>& init_rho, 
         eigenvecs_H.data(), n 
     );
 
+    // converting eigenvecs_H to complex to do further transformation
+    std::vector<Complex> eigenvecs_H_complex(n*n);
+    for (int i = 0; i < n*n; i++) {
+        eigenvecs_H_complex[i] = Complex(eigenvecs_H[i], 0.0);
+    }
+
+
     // transforming eigenvectors of Hessenberg matrix to density matrix basis
     result.eigenvectors.resize(num_states*num_states*n);
     Complex alpha = {1.0, 0.0};
@@ -181,7 +196,7 @@ EigenResult LinbladianSolver::diagonalize(const std::vector<Complex>& init_rho, 
         CblasRowMajor, CblasNoTrans, CblasNoTrans,
         num_states*num_states, n, n, &alpha, 
         kyrlov_basis_flatten.data(), n,
-        eigenvecs_H.data(), n, &beta,
+        eigenvecs_H_complex.data(), n, &beta,
         result.eigenvectors.data(), n 
     );
     return result;
@@ -206,6 +221,9 @@ double LinbladianSolver::computeInnerProduct(const std::vector<Complex>& matA, c
         return ctrace.real();
     }
     else {
+        std::cout << std::abs(ctrace.imag()) << "\n";
+        printMatrix(matA,M, M);
+        printMatrix(matB,M, M);
         throw std::runtime_error("Norm is not real, Matrix is not Hermitian");
     };
 }
@@ -349,9 +367,9 @@ int main(){
 
     int N = 2;
     int num_states = 1 << N;
-    int K = 10;
+    int K = 15;
     double J = -1.0;
-    double h = 0.01;
+    double h = 0.1;
 
     std::vector<Complex> rho = constructRandomRho(num_states);
     /*s
