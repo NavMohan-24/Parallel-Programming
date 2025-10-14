@@ -8,6 +8,7 @@
 #include <complex>
 #include <stdexcept>
 #include <lapacke.h>
+#include <algorithm>
 
 using Complex = std::complex<double>;
 
@@ -37,7 +38,7 @@ class LinbladianSolver
                         DecayType decay_ = DecayType::Damping,  
                         Scope scope_ = Scope::Local);
         std::vector<Complex> applyLinbladian(const std::vector<Complex>& rho);
-        EigenResult diagonalize(const std::vector<Complex>& initial_rho, int k, double tol = 1e-12);
+        EigenResult diagonalize(const std::vector<Complex>& initial_rho, int k, bool descending = false, double tol = 1e-12);
         std::vector<double> constructHessenbergMatrix(const std::vector<Complex>& initial_rho, int k, double tol = 1e-12); // need to make it protected at end
 
 
@@ -48,6 +49,7 @@ class LinbladianSolver
         std::vector<Complex> constructDissipator(const std::vector<Complex>& mat,int N, int num_states, double rate, DecayType decay, Scope scope);
         double computeInnerProduct(const std::vector<Complex>& matA, const std::vector<Complex>& matB, int M, double tol = 1e-12);
         void normalizeMatrix(std::vector<Complex>& mat, int M); // equivalent to setting norm = None
+        void sortEigenPairs(std::vector<Complex>& eigenvalues,std::vector<Complex>& eigenvectors,int row, int col, bool descending = false);
         
     
 };

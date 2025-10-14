@@ -116,7 +116,7 @@ std::vector<double> LinbladianSolver::constructHessenbergMatrix(const std::vecto
     return H;
 }
 
-EigenResult LinbladianSolver::diagonalize(const std::vector<Complex>& init_rho, int k, double tol){
+EigenResult LinbladianSolver::diagonalize(const std::vector<Complex>& init_rho, int k, bool descending, double tol){
 
     std::vector<double> H = constructHessenbergMatrix(init_rho, k, tol);
     EigenResult result;
@@ -199,6 +199,8 @@ EigenResult LinbladianSolver::diagonalize(const std::vector<Complex>& init_rho, 
         eigenvecs_H_complex.data(), n, &beta,
         result.eigenvectors.data(), n 
     );
+
+    sortEigenPairs(result.eigenvalues, result.eigenvectors, num_states*num_states, n, false);
     return result;
 
 }
@@ -240,6 +242,42 @@ void LinbladianSolver::normalizeMatrix(std::vector<Complex>& mat, int M){
     };
 
 }
+
+void LinbladianSolver::sortEigenPairs(std::vector<Complex>& eigenvalues,
+                    std::vector<Complex>& eigenvectors,int row, int col,
+                    bool descending) {
+    // Create index vector [0, 1, 2, ..., n-1]
+    std::vector<int> indices(eigenvalues.size());
+    for (int i = 0; i < indices.size(); ++i)
+        indices[i] = i;
+
+    // Sort indices based on corresponding eigenvalue's real part
+    std::sort(indices.begin(), indices.end(),
+              [descending, &eigenvalues](int i, int j) {
+                  return (descending)
+                      ? (std::abs(eigenvalues[i]) > std::abs(eigenvalues[j]))
+                      : (std::abs(eigenvalues[i]) < std::abs(eigenvalues[j]));
+        });
+
+    // Apply sorted order
+
+    std::vector<Complex> sortedVals(eigenvalues.size());
+    std::vector<Complex> sortedVecs(row * col);
+
+    for (int new_j = 0; new_j < col; ++new_j) {
+        int old_j = indices[new_j];
+        sortedVals[new_j] = eigenvalues[old_j];
+
+        // Copy column `old_j` → `new_j`
+        for (int r = 0; r < row; ++r) {
+            sortedVecs[r * col + new_j] = eigenvectors[r * col + old_j];
+        }
+    }
+
+    eigenvalues = std::move(sortedVals);
+    eigenvectors = std::move(sortedVecs);
+}
+
 
 std::vector<Complex> LinbladianSolver::applyCommutator(const std::vector<Complex>& matA,const std::vector<Complex>& matB, int M)
 {
