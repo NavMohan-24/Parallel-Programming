@@ -139,6 +139,11 @@ std::vector<double> LinbladianSolver::constructHessenbergMatrix(const std::vecto
 
 EigenResult LinbladianSolver::diagonalize(const std::vector<Complex>& init_rho, int k, bool descending, double tol){
 
+    int max_k = num_states*num_states - 1;
+    if (k > max_k){
+        throw std::runtime_error("Number of requested eigen vals/vecs must be <= N.");
+    }
+
     std::vector<double> H = constructHessenbergMatrix(init_rho, k, tol);
     EigenResult result;
     
