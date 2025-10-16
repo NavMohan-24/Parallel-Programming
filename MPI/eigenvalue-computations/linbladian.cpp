@@ -2,7 +2,7 @@
 #include "utils.hpp"
 
 
-inline Complex cleanMatrixElements(const Complex& z, double tol=1e-8){
+inline Complex cleanMatrixElements(const Complex& z, double tol=1e-12){
     double re = (std::abs(z.real()) < tol) ? 0: z.real();
     double img = (std::abs(z.imag()) < tol) ? 0: z.imag();
     return {re, img};
