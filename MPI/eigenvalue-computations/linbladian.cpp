@@ -7,6 +7,26 @@ inline Complex cleanMatrixElements(const Complex& z, double tol=1e-8){
     double img = (std::abs(z.imag()) < tol) ? 0: z.imag();
     return {re, img};
 }
+// Add helper function to enforce Hermiticity
+void enforceHermiticity(std::vector<Complex>& mat, int M) {
+    for (int i = 0; i < M; i++) {
+        // Diagonal must be real
+        mat[i*M + i] = Complex(mat[i*M + i].real(), 0.0);
+        
+        // Off-diagonal: symmetrize
+        for (int j = i+1; j < M; j++) {
+            Complex m_ij = mat[i*M + j];
+            Complex m_ji = mat[j*M + i];
+            
+            // Average: (m_ij + conj(m_ji))/2
+            Complex sym_val = 0.5 * (m_ij + std::conj(m_ji));
+            
+            mat[i*M + j] = cleanMatrixElements(sym_val);
+            mat[j*M + i] = cleanMatrixElements(std::conj(sym_val));
+        }
+    }
+}
+
 
 inline Complex computeTrace(const std::vector<Complex>& mat, int M){
 
@@ -102,8 +122,9 @@ std::vector<double> LinbladianSolver::constructHessenbergMatrix(const std::vecto
             //normalize basis[j+1]
             //normalizeMatrix(kyrlov_basis[j+1],num_states);
             for (int i = 0; i < num_states*num_states; i++){
-                kyrlov_basis[j+1][i] /= std::sqrt(nf); 
+                kyrlov_basis[j+1][i] = kyrlov_basis[j+1][i]/std::sqrt(nf); 
             };
+            enforceHermiticity(kyrlov_basis[j+1],num_states);
         }             
     }
     //auto idx_flat = [this](int row, int col){return row*num_states*num_states+col;}; // num_states is a member variable so we need to capture either `this` pointer or '&` 
