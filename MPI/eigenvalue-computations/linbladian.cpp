@@ -21,8 +21,8 @@ void enforceHermiticity(std::vector<Complex>& mat, int M) {
             // Average: (m_ij + conj(m_ji))/2
             Complex sym_val = 0.5 * (m_ij + std::conj(m_ji));
             
-            mat[i*M + j] = cleanMatrixElements(sym_val);
-            mat[j*M + i] = cleanMatrixElements(std::conj(sym_val));
+            mat[i*M + j] = sym_val;
+            mat[j*M + i] = std::conj(sym_val);
         }
     }
 }
@@ -62,6 +62,9 @@ std::vector<Complex> LinbladianSolver::applyLinbladian(const std::vector<Complex
         linbladian[i] =  cleanMatrixElements(i_unit*comm[i]+diss[i]);
     };
 
+    // enforcing hermicity to prevent floating point errors
+    // enforceHermiticity(linbladian,num_states);
+
     return linbladian;
 };        
 
@@ -78,8 +81,7 @@ std::vector<double> LinbladianSolver::constructHessenbergMatrix(const std::vecto
 
     // container to store kyrlov basis vectors
     std::vector<std::vector<Complex>> kyrlov_basis(k+2);
-    //kyrlov_basis.resize(k+2);
-    kyrlov_basis_flatten.resize(num_states*num_states*(k+1));
+  
     
     // normalize the input matrix
     kyrlov_basis[0] = initial_rho;
@@ -114,9 +116,32 @@ std::vector<double> LinbladianSolver::constructHessenbergMatrix(const std::vecto
             // compute Hessenberg matrix elements
             double nf = computeInnerProduct(kyrlov_basis[j+1], kyrlov_basis[j+1], num_states);
 
+            // graceful exit
             if (nf < 1e-12){
-                throw std::runtime_error("Arnoldi Method Breakdown : Norm became zero");
+                // throw std::runtime_error("Arnoldi Method Breakdown : Norm became zero");
+                
+                // for (int i = 0; i < num_states*num_states; i++){
+                //     kyrlov_basis[j+1][i] = kyrlov_basis[j+1][i]/std::sqrt(nf); 
+                // };
+
+                // std::cout << "1" << "\n";
+                std::vector<double> H_new((j+1)*(j+1)); 
+                for (int m=0; m < j+1; m++){
+                    for (int n=0; n < j+1; n++){
+                        H_new[m*(j+1)+n] = H[m*(k+1)+n];
+                    }
+                }
+                // std::cout << "2" << "\n";
+                kyrlov_basis_flatten.resize(num_states*num_states*(j+1));
+                for (int i = 0; i < j+1; i++){
+                    for (int m = 0; m < num_states*num_states; m++){
+                        kyrlov_basis_flatten[m*(j+1) + i] = kyrlov_basis[i][m]; // flattening and storing it in transposed manner (due to the way in which kyrlov basis is constructed)
+                    }
+                }
+                // std::cout << "3" << "\n";
+                return H_new;
             }
+
             H[idx(j+1,j)] = std::sqrt(nf);
             
             //normalize basis[j+1]
@@ -128,6 +153,7 @@ std::vector<double> LinbladianSolver::constructHessenbergMatrix(const std::vecto
         }             
     }
     //auto idx_flat = [this](int row, int col){return row*num_states*num_states+col;}; // num_states is a member variable so we need to capture either `this` pointer or '&` 
+    kyrlov_basis_flatten.resize(num_states*num_states*(k+1));
     for (int i = 0; i < k+1; i++){
         for (int j = 0; j < num_states*num_states; j++){
             kyrlov_basis_flatten[j*(k+1) + i] = kyrlov_basis[i][j]; // flattening and storing it in transposed manner
@@ -147,8 +173,8 @@ EigenResult LinbladianSolver::diagonalize(const std::vector<Complex>& init_rho, 
     std::vector<double> H = constructHessenbergMatrix(init_rho, k, tol);
     EigenResult result;
     
-
-    int n = k+1;  // dimension of Hessenberg matrix (k+1) x (k+1)
+    int size = static_cast<int>(H.size()); 
+    int n = std::sqrt(size); //k+1;  // dimension of Hessenberg matrix (k+1) x (k+1)
     int ilo = 1, ihi = n; // lapack allows working with submatrices - here we have chosen full matrix
 
     std::vector<double> wr(n), wi(n); // containers to store real and imaginary parts of eigenvalues computed.
@@ -226,7 +252,7 @@ EigenResult LinbladianSolver::diagonalize(const std::vector<Complex>& init_rho, 
         result.eigenvectors.data(), n 
     );
 
-    sortEigenPairs(result.eigenvalues, result.eigenvectors, num_states*num_states, n, false);
+    sortEigenPairs(result.eigenvalues, result.eigenvectors, num_states*num_states, n, descending);
     return result;
 
 }
