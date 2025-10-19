@@ -62,9 +62,6 @@ std::vector<Complex> LinbladianSolver::applyLinbladian(const std::vector<Complex
         linbladian[i] =  cleanMatrixElements(i_unit*comm[i]+diss[i]);
     };
 
-    // enforcing hermicity to prevent floating point errors
-    // enforceHermiticity(linbladian,num_states);
-
     return linbladian;
 };        
 
@@ -76,29 +73,21 @@ std::vector<double> LinbladianSolver::constructHessenbergMatrix(const std::vecto
     auto idx = [k](int i, int j){return i*(k+1)+j;};
 
     // Hessenberg Matrix Initialization. 
-    // Elements are expected to be double since it is constructed from inner product between two Hermitian matrices
+    // Elements are expected to be double since 
+    // it is constructed from inner product between two Hermitian matrices
     std::vector<double> H((k+1)*(k+1),0.0); 
 
     // container to store kyrlov basis vectors
     std::vector<std::vector<Complex>> kyrlov_basis(k+2);
   
-    
     // normalize the input matrix
     kyrlov_basis[0] = initial_rho;
     normalizeMatrix(kyrlov_basis[0],num_states);
     
-    bool isHermitian;
     for (int j = 0; j <= k; j++){
 
         // apply the Linbladian superoperator
         kyrlov_basis[j+1] = applyLinbladian(kyrlov_basis[j]);
-        // isHermitian = checkHermicity(kyrlov_basis[j+1],num_states);
-        // if (!isHermitian){
-        //     std::cout<<  j+1 <<"th eigenvector is not hermitian"<< "\n";\
-        //     printMatrix(kyrlov_basis[j+1], num_states, num_states);
-        //     throw std::runtime_error("Matrix is not Hermitian");
-
-        // };
         
         // orthogonalize density matrix
         for (int i = 0; i <= j; i++)
@@ -113,46 +102,53 @@ std::vector<double> LinbladianSolver::constructHessenbergMatrix(const std::vecto
 
         }
         if (j < k){
-            // compute Hessenberg matrix elements
+
+            // compute norm of new basis vector
             double nf = computeInnerProduct(kyrlov_basis[j+1], kyrlov_basis[j+1], num_states);
 
-            // graceful exit
+            // graceful exit when norm is zero
             if (nf < 1e-12){
-                // throw std::runtime_error("Arnoldi Method Breakdown : Norm became zero");
                 
-                // for (int i = 0; i < num_states*num_states; i++){
-                //     kyrlov_basis[j+1][i] = kyrlov_basis[j+1][i]/std::sqrt(nf); 
-                // };
+                // resizing Hessenberg matrix 
+                std::vector<double> H_new((j+1)*(j+1)); // size of the H matrix depends upon current iteration value.
 
-                // std::cout << "1" << "\n";
-                std::vector<double> H_new((j+1)*(j+1)); 
+                // allocating matrix elements from H_new to H
                 for (int m=0; m < j+1; m++){
                     for (int n=0; n < j+1; n++){
-                        H_new[m*(j+1)+n] = H[m*(k+1)+n];
+                        H_new[m*(j+1)+n] = H[m*(k+1)+n]; // j+1^th row and column should be zero 
                     }
                 }
-                // std::cout << "2" << "\n";
+                
+                // resizing and flatten kyrlov basis vector
                 kyrlov_basis_flatten.resize(num_states*num_states*(j+1));
                 for (int i = 0; i < j+1; i++){
                     for (int m = 0; m < num_states*num_states; m++){
-                        kyrlov_basis_flatten[m*(j+1) + i] = kyrlov_basis[i][m]; // flattening and storing it in transposed manner (due to the way in which kyrlov basis is constructed)
+                        kyrlov_basis_flatten[m*(j+1)+ i] = kyrlov_basis[i][m]; 
                     }
                 }
-                // std::cout << "3" << "\n";
-                return H_new;
-            }
 
+                return H_new;
+                // throw std::runtime_error("Arnoldi Method Breakdown : Norm became zero");
+
+            }
+            // norm of j+1 th kryrlov vector becomes sub-diagonal elements of H matrix
             H[idx(j+1,j)] = std::sqrt(nf);
             
-            //normalize basis[j+1]
-            //normalizeMatrix(kyrlov_basis[j+1],num_states);
+            
+
+            // normalzing the krylov basis
             for (int i = 0; i < num_states*num_states; i++){
                 kyrlov_basis[j+1][i] = kyrlov_basis[j+1][i]/std::sqrt(nf); 
             };
-            enforceHermiticity(kyrlov_basis[j+1],num_states);
-        }             
-    }
-    //auto idx_flat = [this](int row, int col){return row*num_states*num_states+col;}; // num_states is a member variable so we need to capture either `this` pointer or '&` 
+            
+            // calculate (A+A^H)/2 to ensure hermicity of density matrix after floating point errors
+            enforceHermiticity(kyrlov_basis[j+1],num_states); // (can move it back to apply linbladian rho)
+
+
+        }    
+       
+
+    //Flattening the kyrlov basis 
     kyrlov_basis_flatten.resize(num_states*num_states*(k+1));
     for (int i = 0; i < k+1; i++){
         for (int j = 0; j < num_states*num_states; j++){
@@ -174,13 +170,12 @@ EigenResult LinbladianSolver::diagonalize(const std::vector<Complex>& init_rho, 
     EigenResult result;
     
     int size = static_cast<int>(H.size()); 
-    int n = std::sqrt(size); //k+1;  // dimension of Hessenberg matrix (k+1) x (k+1)
+    int n = std::sqrt(size); // dimension of Hessenberg matrix (k+1) x (k+1)
+
     int ilo = 1, ihi = n; // lapack allows working with submatrices - here we have chosen full matrix
 
     std::vector<double> wr(n), wi(n); // containers to store real and imaginary parts of eigenvalues computed.
     std::vector<double> Z(n*n, 0.0); // container to store Schur vectors.
-    // Initialize with zeros
-    
     // Initialize Z as identity matrix
     for (int i = 0; i < n; i++) {
         Z[i*n + i] = 1.0;
@@ -275,9 +270,8 @@ double LinbladianSolver::computeInnerProduct(const std::vector<Complex>& matA, c
         return ctrace.real();
     }
     else {
-        std::cout << std::abs(ctrace.imag()) << "\n";
-        printMatrix(matA,M, M);
-        printMatrix(matB,M, M);
+        // std::cout << "\nimaginary part of norm causing the problem:"<< "\n";
+        // std::cout << std::abs(ctrace.imag()) << "\n";
         throw std::runtime_error("Norm is not real, Matrix is not Hermitian");
     };
 }
@@ -290,7 +284,7 @@ void LinbladianSolver::normalizeMatrix(std::vector<Complex>& mat, int M){
 
     //inplace modification of matrix elements
     for (int i = 0; i < M*M; i++){
-        mat[i] /= std::sqrt(n); // * to extract double from std::optional<double>
+        mat[i] /= std::sqrt(n); 
     };
 
 }
@@ -392,6 +386,7 @@ std::vector<Complex> LinbladianSolver::applyAntiCommutator(const std::vector<Com
     return AB;
 };
 
+
 std::vector<Complex> LinbladianSolver::constructDissipator(const std::vector<Complex>& mat,int N, 
     int num_states, double rate, DecayType decay, Scope scope)
     {
@@ -462,50 +457,83 @@ int main(){
     double h = 0.1;
 
     std::vector<Complex> rho = constructRandomRho(num_states);
-    /*s
-    td::vector<Complex> psi = {
-        Complex (1.0 / std::sqrt(2.0)),
-        Complex (0.0),
-        Complex (0.0), 
-        Complex (0.0), 
-        Complex (0.0), 
-        Complex (0.0), 
-        Complex (0.0),
-        Complex (1.0 / std::sqrt(2.0)) 
-        };
+    
+    // std::vector<Complex> ghz = {
+    //     Complex (1.0 / std::sqrt(2.0)),
+    //     Complex (0.0),
+    //     Complex (0.0), 
+    //     Complex (0.0), 
+    //     Complex (0.0), 
+    //     Complex (0.0), 
+    //     Complex (0.0),
+    //     Complex (1.0 / std::sqrt(2.0)) 
+    // };
 
-    std::vector<Complex> rho = constructRhoFromStatevector(psi);
-    */
+    //std::vector<Complex> rho = constructRhoFromStatevector(ghz);
 
-    std::cout<<"Printing Random Matrix" << "\n";
-    printMatrix(rho, num_states, num_states);
-    std::cout<<"\n";
+    // std::vector<Complex> bell = {
+    //     Complex (1.0 / std::sqrt(2.0)),
+    //     Complex (0.0),
+    //     Complex (0.0),
+    //     Complex (1.0 / std::sqrt(2.0)) 
+    // };
 
-    bool isHermitian = checkHermicity(rho, num_states);
-    printResult(isHermitian, "Hermicity of rho");
+    // std::vector<Complex> rho = constructRhoFromStatevector(bell);
 
-    std::cout<<"Printing Hamiltonian" << "\n";
+    // std::cout<<"Printing Random Matrix" << "\n";
+    // printMatrix(rho, num_states, num_states);
+    // std::cout<<"\n";
+
+    // bool isHermitian = checkHermicity(rho, num_states);
+    // printResult(isHermitian, "Hermicity of rho");
+
+    // std::cout<<"Printing Hamiltonian" << "\n";
     std::vector<Complex> hamiltonian = constructHamiltonian(N,num_states,J,h);
-    printMatrix(hamiltonian, num_states, num_states);
-    std::cout<<"\n";
+    // printMatrix(hamiltonian, num_states, num_states);
+    // std::cout<<"\n";
 
     LinbladianSolver LSolver(hamiltonian, N);
     std::cout<<"Printing dRho" << "\n";
-    std::vector<Complex> rho_new = LSolver.applyLinbladian(rho);
-    printMatrix(rho_new, num_states, num_states);
-    std::cout<<"\n";
-    isHermitian = checkHermicity(rho_new, num_states);
-    printResult(isHermitian, "Hermicity of d_rho");
+    // std::vector<Complex> rho_new = LSolver.applyLinbladian(rho);
+    // printMatrix(rho_new, num_states, num_states);
+    // std::cout<<"\n";
+    // isHermitian = checkHermicity(rho_new, num_states);
+    // printResult(isHermitian, "Hermicity of d_rho");
 
-    std::cout<<"Printing Hessenberg Matrix" << "\n";
-    std::vector<double> H = LSolver.constructHessenbergMatrix(rho, K);
-    printMatrix(H, K+1, K+1);
-    std::cout<<"\n";
+    // std::cout<<"Printing Hessenberg Matrix" << "\n";    std::vector<double> H = LSolver.constructHessenbergMatrix(rho, K);
+    // printMatrix(H, K+1, K+1);
+    // std::cout<<"\n";
 
     EigenResult result = LSolver.diagonalize(rho, K);
-    printMatrix(result.eigenvectors, num_states*num_states, K+1);
+    std::cout << "\nRitzvectors\n" << "\n";
+    int size = static_cast<int> (result.eigenvalues.size());
+    std::cout<< size<< "\n";
+    printMatrix(result.eigenvectors,num_states*num_states,size);
+    std::cout << "Steady State\n" << "\n";
+    for (int i = 0; i <  size ; i++){
+        std::cout << "eigenvector :" << i+1 << "\n";
+        for (int j = 0; j <  num_states*num_states; j++){
+            std::cout<<result.eigenvectors[j*(size)+i]<< "\n"; //transposed
+        }
 
-    for(int k = 0; k < K+1; k++){
+    }
+
+    // for (int i = 0; i <  size ; i++){
+    //     std::cout << "eigenvector :" << i+1 << "\n";
+    //     for (int j = 0; j <  num_states; j++){
+    //         int m = j*(size)+i;
+    //         for (int k =0; k < num_states; k++){
+    //             std::cout<<result.eigenvectors[m*num_states+k]<< " "; //transposed
+    //         }
+    //         std::cout << std::endl;
+            
+    //     }
+
+    // }
+    //printMatrix(result.eigenvectors, num_states*num_states, size);
+
+    std::cout << "\nEigenvalues\n" << "\n";
+    for(int k = 0; k < size; k++){
         std::cout << "eigenvalue " << k+1 << ":" << result.eigenvalues[k] << "\n";
     }
 }
