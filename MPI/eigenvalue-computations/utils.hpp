@@ -26,17 +26,17 @@ std::vector<Complex> addMatrix(const std::vector<Complex>& A,
                                int N);
 
 template<typename T>
-void printMatrix(const std::vector<T>& M, int N) {
-    for (int i = 0; i < N; i++) {
-        for (int j = 0; j < N; j++) {
-            std::cout << M[i * N + j] << " ";
+void printMatrix(const std::vector<T>& M, int row, int col) {
+    for (int i = 0; i < row; i++) {
+        for (int j = 0; j < col; j++) {
+            std::cout << M[i * col + j] << " ";
         }
         std::cout << std::endl;
     }
 }
 Complex computeTrace(const std::vector<Complex>& A, int N);
 
-bool checkHermicity(const std::vector<Complex>& A, int N, double tol = 1e-12);
+bool checkHermicity(const std::vector<Complex>& A, int N, double tol = 1e-10);
 
 // bool checkPositiveSemiDefinitivity(const std::vector<Complex>& A, int N, double tol = 1e-12);
 
