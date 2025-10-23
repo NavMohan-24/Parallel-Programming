@@ -11,7 +11,7 @@ inline Complex cleanMatrixElements(const Complex& z, double tol=1e-12){
     return {re, img};
 }
 
-std::vector<Complex> createRandomRho(int num_states){
+std::vector<Complex> constructRandomRho(int num_states){
 
     // int num_states = 1 << N;
 
@@ -52,7 +52,7 @@ std::vector<Complex> createRandomRho(int num_states){
 }
 
 
-std::vector<Complex> createRhoFromStatevector(std::vector<Complex>& psi){
+std::vector<Complex> constructRhoFromStatevector(std::vector<Complex>& psi){
 
     int N = (int) psi.size();
 
@@ -77,7 +77,7 @@ int main() {
     int N = 3;
     int num_states = 1 << N;
 
-    std::vector<Complex> matrix = createRandomRho(num_states);
+    std::vector<Complex> matrix = constructRandomRho(num_states);
 
     std::vector<Complex> psi = {
         Complex (1.0 / std::sqrt(2.0)),

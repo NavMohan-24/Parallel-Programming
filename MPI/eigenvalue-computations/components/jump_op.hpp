@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <iostream>
+#include <complex>
 
 enum class Scope {Local,Collective};
 enum class DecayType {Damping, Pumping, Dephasing}; // Sigma Minus, Sigma Plus, Sigma Z
