@@ -1,13 +1,28 @@
 #include "linbladian.hpp"
 #include "utils.hpp"
 
+//_______________helper-functions_______________________________________________________
 
+// inline function to convert the matrix elements less than tolerance to zero.
 inline Complex cleanMatrixElements(const Complex& z, double tol=1e-12){
     double re = (std::abs(z.real()) < tol) ? 0: z.real();
     double img = (std::abs(z.imag()) < tol) ? 0: z.imag();
     return {re, img};
 }
-// Add helper function to enforce Hermiticity
+
+
+// helper function to enforce Hermiticity
+/**
+ * @brief Helper Function to enforce Hermicity of a matrix.
+ * 
+ * Floating point errors in computation could affect the hermicity 
+ * of the matrix. Perform (A+A^H)/2 on an input matrix A.
+ * 
+ * @param mat Input square matrix.
+ * @param M  Dimension of the matrix.
+ * @return void
+ */
+
 void enforceHermiticity(std::vector<Complex>& mat, int M) {
     for (int i = 0; i < M; i++) {
         // Diagonal must be real
@@ -27,7 +42,7 @@ void enforceHermiticity(std::vector<Complex>& mat, int M) {
     }
 }
 
-
+// inline function to compute trace of a matrix.
 inline Complex computeTrace(const std::vector<Complex>& mat, int M){
 
     // assumes a square matrix
@@ -39,7 +54,7 @@ inline Complex computeTrace(const std::vector<Complex>& mat, int M){
     
 }
 
-//_________________________________________________________________________
+//_______________________Linbladian-Solver-Implementation________________________________________________
 
 LinbladianSolver::LinbladianSolver(const std::vector<Complex>& hamiltonian_,
                 int N_, double rate_, DecayType decay_, Scope scope_)
