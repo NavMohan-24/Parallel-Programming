@@ -44,7 +44,17 @@ class LinbladianDiagonalizer
 
 
     protected:
-        
+        /**
+         * @brief Constructs Hessenberg Matrix from the Linbladian through Arnoldi iteration.
+         * 
+         * Constructs Krylov Subspace from initial density matrix iteratively. Each iteration
+         * calls the `applyLinbladian` method to generate Krylov vectors.
+         * 
+         * @param rho Input density matrix.
+         * 
+         * @return H Vectorized Hessenberg matrix.
+         */
+        std::vector<double> constructHessenbergMatrix(const std::vector<Complex>& initial_rho, int k, double tol = 1e-12); // need to make it protected at end
         std::vector<Complex> applyCommutator(const std::vector<Complex>& matA,const std::vector<Complex>& matB, int M);
         std::vector<Complex> applyAntiCommutator(const std::vector<Complex>& matA,const std::vector<Complex>& matB, int M);
         std::vector<Complex> constructDissipator(const std::vector<Complex>& mat,int N, int num_states, double rate, DecayType decay, Scope scope);
