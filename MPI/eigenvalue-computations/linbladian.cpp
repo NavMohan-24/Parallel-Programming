@@ -147,7 +147,7 @@ std::vector<double> LinbladianSolver::constructHessenbergMatrix(const std::vecto
 
         }    
        
-
+    }
     //Flattening the kyrlov basis 
     kyrlov_basis_flatten.resize(num_states*num_states*(k+1));
     for (int i = 0; i < k+1; i++){
@@ -493,7 +493,7 @@ int main(){
     // std::cout<<"\n";
 
     LinbladianSolver LSolver(hamiltonian, N);
-    std::cout<<"Printing dRho" << "\n";
+    // std::cout<<"Printing dRho" << "\n";
     // std::vector<Complex> rho_new = LSolver.applyLinbladian(rho);
     // printMatrix(rho_new, num_states, num_states);
     // std::cout<<"\n";
@@ -507,9 +507,9 @@ int main(){
     EigenResult result = LSolver.diagonalize(rho, K);
     std::cout << "\nRitzvectors\n" << "\n";
     int size = static_cast<int> (result.eigenvalues.size());
-    std::cout<< size<< "\n";
-    printMatrix(result.eigenvectors,num_states*num_states,size);
-    std::cout << "Steady State\n" << "\n";
+    // std::cout<< size<< "\n";
+    //printMatrix(result.eigenvectors,num_states*num_states,size);
+    //std::cout << "Steady State\n" << "\n";
     for (int i = 0; i <  size ; i++){
         std::cout << "eigenvector :" << i+1 << "\n";
         for (int j = 0; j <  num_states*num_states; j++){
@@ -532,7 +532,7 @@ int main(){
     // }
     //printMatrix(result.eigenvectors, num_states*num_states, size);
 
-    std::cout << "\nEigenvalues\n" << "\n";
+    std::cout << "\nRitzvalues\n" << "\n";
     for(int k = 0; k < size; k++){
         std::cout << "eigenvalue " << k+1 << ":" << result.eigenvalues[k] << "\n";
     }
