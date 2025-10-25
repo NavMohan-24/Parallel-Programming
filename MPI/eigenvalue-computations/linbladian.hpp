@@ -17,7 +17,8 @@ struct EigenResult {
     std::vector<Complex> eigenvectors;
 };
 
-class LinbladianSolver
+
+class LinbladianDiagonalizer
 {
 
     private:
@@ -33,7 +34,7 @@ class LinbladianSolver
         
     public:
 
-        LinbladianSolver(const std::vector<Complex>& hamiltonian_,
+        LinbladianDiagonalizer(const std::vector<Complex>& hamiltonian_,
                         int N_, double rate_ = 1.0, 
                         DecayType decay_ = DecayType::Damping,  
                         Scope scope_ = Scope::Local);
