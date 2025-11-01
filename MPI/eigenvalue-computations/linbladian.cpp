@@ -57,8 +57,8 @@ inline Complex computeTrace(const std::vector<Complex>& mat, int M){
 //_______________________Linbladian-Solver-Implementation________________________________________________
 
 LinbladianDiagonalizer::LinbladianDiagonalizer(const std::vector<Complex>& hamiltonian_,
-                int N_, double rate_, DecayType decay_, Scope scope_)
-                : hamiltonian(hamiltonian_), N(N_), num_states(1<< N_),
+                int N_, int d_, double rate_, DecayType decay_, Scope scope_)
+                : hamiltonian(hamiltonian_), N(N_), d(d_), num_states(std::pow(d_,N_)),
                 rate(rate_), decay(decay_), scope(scope_){}
                 // validate the hamiltonian in the constructor
 

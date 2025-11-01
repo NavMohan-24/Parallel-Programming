@@ -22,26 +22,43 @@ class LinbladianDiagonalizer
 {
 
     private:
+        // Hamiltonian of the system
         std::vector<Complex> hamiltonian;
+        // number of quantum systems.
         int N;
+        // dimension of the quantum systems 
+        int d;
+        // hilbert space dimension
         int num_states;
+        // decay rate
         double rate = 1.0;
+        // decay type
         DecayType decay = DecayType::Damping;
+        // scope of decay - local implies spin wise decay
         Scope scope = Scope::Local;
-        //std::vector<std::vector<Complex>> kyrlov_basis;
+        // container to store the krylov vector in flattened manner
         std::vector<Complex>  kyrlov_basis_flatten;
         
         
     public:
-
+         /**
+         * @brief Constructs the diagonalizer from a Hamiltonian and specifications of dissipations.
+         * 
+         * @param H System Hamiltonian matrix.
+         * @param N Number of quantum systems.
+         * @param d Dimension of quantum systme.
+         * @param rate Decay rate.
+         * @param scope Scope of the decay. Whether decay happens locally or globally.
+         * 
+         */
         LinbladianDiagonalizer(const std::vector<Complex>& hamiltonian_,
-                        int N_, double rate_ = 1.0, 
+                        int N_, int d_, double rate_ = 1.0, 
                         DecayType decay_ = DecayType::Damping,  
                         Scope scope_ = Scope::Local);
         /**
          * @brief Applies Linbladian on density matrix.
          * 
-         * Commputes:
+         * Computes:
          * \f[
          * \mathcal{L}(\rho) = -i[H, \rho] + \sum_{k}
          * \left( L_k \rho L_k^{\dagger} - \frac{1}{2} \{ L_k^{\dagger} L_k, \rho \} \right)
