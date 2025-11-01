@@ -403,7 +403,7 @@ std::vector<Complex> LinbladianDiagonalizer::applyAntiCommutator(const std::vect
 };
 
 
-std::vector<Complex> LinbladianDiagonalizer::constructDissipator(const std::vector<Complex>& mat,int N, 
+std::vector<Complex> LinbladianDiagonalizer::constructDissipator(const std::vector<Complex>& rho,int N, 
     int num_states, double rate, DecayType decay, Scope scope)
     {
     // D(ρ)=∑_k​(J_k ​ρ J_k^†​ − 1/2{J_k^†​ J_k​,ρ})
@@ -429,7 +429,7 @@ std::vector<Complex> LinbladianDiagonalizer::constructDissipator(const std::vect
                 );
 
         // compute  1/2{Jk^†​ Jk​,ρ})
-        std::vector<Complex> SP = applyAntiCommutator(K,mat,num_states);
+        std::vector<Complex> SP = applyAntiCommutator(K,rho,num_states);
 
         //compute L_k ​ρ
         alpha = {1.0,0.0};
@@ -437,7 +437,7 @@ std::vector<Complex> LinbladianDiagonalizer::constructDissipator(const std::vect
         cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
                     num_states, num_states, num_states,
                     &alpha, Jk.data(), num_states,
-                    mat.data(), num_states, 
+                    rho.data(), num_states, 
                     &beta, tempA.data(), num_states
                 );
 
