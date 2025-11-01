@@ -38,7 +38,19 @@ class LinbladianDiagonalizer
                         int N_, double rate_ = 1.0, 
                         DecayType decay_ = DecayType::Damping,  
                         Scope scope_ = Scope::Local);
-        std::vector<Complex> applyLinbladian(const std::vector<Complex>& rho);
+        /**
+         * @brief Applies Linbladian on density matrix.
+         * 
+         * Commputes:
+         * \f[
+         * \mathcal{L}(\rho) = -i[H, \rho] + \sum_{k}
+         * \left( L_k \rho L_k^{\dagger} - \frac{1}{2} \{ L_k^{\dagger} L_k, \rho \} \right)
+         * \f]
+         * 
+         * @param rho Input density matrix.
+         * 
+         *  */    
+        std::vector<Complex> applyLinbladian(std::vector<Complex>& rho);
         EigenResult diagonalize(const std::vector<Complex>& initial_rho, int k, bool descending = false, double tol = 1e-12);
         std::vector<double> constructHessenbergMatrix(const std::vector<Complex>& initial_rho, int k, double tol = 1e-12); // need to make it protected at end
 

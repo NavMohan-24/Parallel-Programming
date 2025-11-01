@@ -63,9 +63,10 @@ LinbladianDiagonalizer::LinbladianDiagonalizer(const std::vector<Complex>& hamil
                 // validate the hamiltonian in the constructor
 
 
-std::vector<Complex> LinbladianDiagonalizer::applyLinbladian(const std::vector<Complex>& rho)
+std::vector<Complex> LinbladianDiagonalizer::applyLinbladian(std::vector<Complex>& rho)
 {
     // validate the rho
+    enforceHermiticity(rho,num_states);
 
     std::vector<Complex> comm = applyCommutator(hamiltonian,rho, num_states);
     std::vector<Complex> diss = constructDissipator(rho, N, num_states, rate, decay, scope);
@@ -157,7 +158,7 @@ std::vector<double> LinbladianDiagonalizer::constructHessenbergMatrix(const std:
             };
             
             // calculate (A+A^H)/2 to ensure hermicity of density matrix after floating point errors
-            enforceHermiticity(kyrlov_basis[j+1],num_states); // (can move it back to apply linbladian rho)
+            // enforceHermiticity(kyrlov_basis[j+1],num_states); // (can move it back to apply linbladian rho)
 
 
         }    
