@@ -17,6 +17,15 @@ struct EigenResult {
     std::vector<Complex> eigenvectors;
 };
 
+/**
+ * @class LinbladianDiagonalizer
+ * @brief Constructs and Diagonalizes Linbladian Superoperator via Arnoldi Iteration.
+ * 
+ * Construction of Linbladian superoperator is done implicitly with out full matrix reconstruction.
+ * Arnoldi iteration is performed to iteratively construct a Krylov subspace, where the 
+ * Linbladian is converted to equivalent Hessenberg matrix and diagonalized.
+ * 
+ */
 
 class LinbladianDiagonalizer
 {
@@ -46,9 +55,14 @@ class LinbladianDiagonalizer
          * 
          * @param H System Hamiltonian matrix.
          * @param N Number of quantum systems.
-         * @param d Dimension of quantum systme.
+         * @param d Dimension of quantum system.
          * @param rate Decay rate.
-         * @param scope Scope of the decay. Whether decay happens locally or globally.
+         * @param decay Type of Decay. 
+         *        Decay types supported::
+         *          - Damping - Uses $\sigma_{\minus}$ as jump operator.
+         *          - Pumping - Uses $\sigma_{\plus}$ as jump operator
+         *          - Dephasing - Uses $\sigma_{z}$ as a jump operator
+         * @param scope The scope of decay, whether decay happens acting Locally or Globally.
          * 
          */
         LinbladianDiagonalizer(const std::vector<Complex>& hamiltonian_,
@@ -69,7 +83,6 @@ class LinbladianDiagonalizer
          *  */    
         std::vector<Complex> applyLinbladian(std::vector<Complex>& rho);
         EigenResult diagonalize(const std::vector<Complex>& initial_rho, int k, bool descending = false, double tol = 1e-12);
-        std::vector<double> constructHessenbergMatrix(const std::vector<Complex>& initial_rho, int k, double tol = 1e-12); // need to make it protected at end
 
 
     protected:
@@ -84,9 +97,50 @@ class LinbladianDiagonalizer
          * @return H Vectorized Hessenberg matrix.
          */
         std::vector<double> constructHessenbergMatrix(const std::vector<Complex>& initial_rho, int k, double tol = 1e-12); // need to make it protected at end
+        /**
+         * @brief Compute commutator between two matrix.
+         * 
+         * Takes two square matrix of same dimension as a input and computes 
+         * the commutator between them.
+         * 
+         * @param matA Input vectorized square matrix.
+         * @param matB Input vectorized square matrix.
+         * @param M Dimension of the square matrix
+         * 
+         * @return Commutator between input matrices in vectorized form.
+         */
+         
         std::vector<Complex> applyCommutator(const std::vector<Complex>& matA,const std::vector<Complex>& matB, int M);
+
+         /**
+         * @brief Compute anti-commutator between two matrix.
+         * 
+         * Takes two square matrix of same dimension as a input and computes 
+         * the aniti-commutator between them.
+         * 
+         * @param matA Input vectorized square matrix.
+         * @param matB Input vectorized square matrix.
+         * @param M Dimension of the square matrix
+         * 
+         * @return Anti-Commutator between input matrices in vectorized form.
+         */
         std::vector<Complex> applyAntiCommutator(const std::vector<Complex>& matA,const std::vector<Complex>& matB, int M);
-        std::vector<Complex> constructDissipator(const std::vector<Complex>& mat,int N, int num_states, double rate, DecayType decay, Scope scope);
+
+        /**
+         * @brief Construction of dissipator part of Linbladian.
+         * 
+         * Disipator part of Linbladian is defined as $\sum_{k} \gamma_{k} \left(L_{k}\rho L_{k}^{\dagger} - \frac{1}{2}\{L_{k}^{\dagger}L_{k}, \rho\}\right)$.
+         * 
+         * @param rho Input vectorized density matrix.
+         * @param N Number of quantum systems/particles.
+         * @param num_states Dimension of Hilbert Space.
+         * @param rate Decay rate.
+         * @param decay Type of Decay. It can be one of Damping, Pumping or Dephasing.
+         * @param scope The scope of decay, whether it is acting Locally or Globally.
+         * 
+         * @return Anti-Commutator between input matrices in vectorized form.
+         */
+        std::vector<Complex> constructDissipator(const std::vector<Complex>& rho,int N, int num_states, double rate, DecayType decay, Scope scope);
         double computeInnerProduct(const std::vector<Complex>& matA, const std::vector<Complex>& matB, int M, double tol = 1e-12);
         void normalizeMatrix(std::vector<Complex>& mat, int M); // equivalent to setting norm = None
         void sortEigenPairs(std::vector<Complex>& eigenvalues,std::vector<Complex>& eigenvectors,int row, int col, bool descending = false);

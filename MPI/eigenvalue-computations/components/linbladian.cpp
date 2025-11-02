@@ -508,7 +508,7 @@ int main(){
     // printMatrix(hamiltonian, num_states, num_states);
     // std::cout<<"\n";
 
-    LinbladianDiagonalizer LSolver(hamiltonian, N);
+    LinbladianDiagonalizer LSolver(hamiltonian, N, 2);
     // std::cout<<"Printing dRho" << "\n";
     // std::vector<Complex> rho_new = LSolver.applyLinbladian(rho);
     // printMatrix(rho_new, num_states, num_states);
