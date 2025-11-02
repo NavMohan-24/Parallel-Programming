@@ -1,7 +1,7 @@
 #ifndef SPIN_LINBLADIAN_CONSTRUCTOR_HPP
 #define SPIN_LINBLADIAN_CONSTRUCTOR_HPP
 
-#include "jump_operator/jump_operator.hpp"
+#include "../jump_operator/jump_operator.hpp"
 #include <cblas.h>
 #include <omp.h>
 #include <vector>
@@ -12,50 +12,49 @@ using Complex = std::complex<double>;
 
 
 /**
- * @class LinbladianConstructor
- * @brief Constructs and Diagonalizes Linbladian Superoperator via Arnoldi Iteration.
+ * @brief Constructs and applies Lindbladian superoperators for open quantum systems.
  * 
- * Construction of Linbladian superoperator is done implicitly with out full matrix reconstruction.
- * Arnoldi iteration is performed to iteratively construct a Krylov subspace, where the 
- * Linbladian is converted to equivalent Hessenberg matrix and diagonalized.
+ * This class provides an implicit construction of the Lindbladian superoperator without
+ * full matrix reconstruction. The Lindbladian governs the dynamics of open quantum systems
+ * including both unitary evolution (via the Hamiltonian) and non-unitary processes
+ * (via dissipation operators).
  * 
+ * The implementation supports various decay types (damping, pumping, dephasing) and can
+ * apply dissipation either locally (per spin) or globally (collective decay).
  */
 
 class LinbladianConstructor
 {
 
     private:
-        // Hamiltonian of the system
-        std::vector<Complex> hamiltonian;
-        // number of quantum systems.
-        int N;
-        // hilbert space dimension
-        int num_states;
-        // decay rate
-        double rate = 1.0;
-        // decay type
-        DecayType decay = DecayType::Damping;
-        // scope of decay - local implies spin wise decay
-        Scope scope = Scope::Local;
-        // container to store the krylov vector in flattened manner
-        std::vector<Complex>  kyrlov_basis_flatten;
+        std::vector<Complex> hamiltonian;           // Hamiltonian of the quantum system
+        int N;                                      // Number of quantum systems (e.g., spins)
+        int num_states;                             // Hilbert space dimension (d^N)
+        double rate;                                // Decay rate (gamma)
+        DecayType decay;                            // Type of decay process
+        Scope scope;                                // Scope of decay (local or global)
+        std::vector<Complex> kyrlov_basis_flatten;  // Flattened storage for Krylov basis vectors
         
         
     public:
 
-         /**
-         * @brief Constructs Linbladian for spin systems from a Hamiltonian and specifications of dissipations.
+        /**
+         * @brief Constructs a Lindbladian for spin systems with specified dissipation.
          * 
-         * @param H System Hamiltonian matrix.
-         * @param N Number of spins.
-         * @param rate Decay rate.
-         * @param decay Type of Decay. 
-         *        Decay types supported::
-         *          - Damping - Uses $\sigma_{\minus}$ as jump operator.
-         *          - Pumping - Uses $\sigma_{\plus}$ as jump operator
-         *          - Dephasing - Uses $\sigma_{z}$ as a jump operator
-         * @param scope The scope of decay, whether decay happens acting Locally or Globally.
+         * Initializes the Lindbladian superoperator with a given Hamiltonian and
+         * dissipation parameters. The Lindbladian describes both coherent evolution
+         * and incoherent decay processes in the open quantum system.
          * 
+         * @param hamiltonian_ System Hamiltonian matrix (flattened, row-major order)
+         * @param N_ Number of spins or quantum subsystems
+         * @param rate_ Decay rate (gamma), default is 1.0
+         * @param decay_ Type of decay process, default is Damping
+         *        - Damping: Uses σ₋ as jump operator (energy decay)
+         *        - Pumping: Uses σ₊ as jump operator (energy gain)
+         *        - Dephasing: Uses σz as jump operator (phase decay)
+         * @param scope_ Scope of decay, default is Local
+         *        - Local: Decay acts independently on each spin
+         *        - Global: Collective decay across all spins (!! TO BE IMPLEMENTED !!)
          */
 
         LinbladianConstructor(const std::vector<Complex>& hamiltonian_,
@@ -63,17 +62,22 @@ class LinbladianConstructor
                         DecayType decay_ = DecayType::Damping,  
                         Scope scope_ = Scope::Local);
         /**
-         * @brief Applies Linbladian on density matrix.
+         * @brief Applies the Lindbladian superoperator to a density matrix.
          * 
-         * Computes:
+         * Computes the action of the Lindbladian on a density matrix:
          * \f[
          * \mathcal{L}(\rho) = -i[H, \rho] + \sum_{k}
          * \left( L_k \rho L_k^{\dagger} - \frac{1}{2} \{ L_k^{\dagger} L_k, \rho \} \right)
          * \f]
          * 
-         * @param rho Input density matrix.
+         * The first term represents unitary evolution under the Hamiltonian H,
+         * while the sum represents dissipative processes characterized by jump
+         * operators Lₖ.
          * 
-         **/
+         * @param rho Input density matrix (flattened, row-major order)
+         * 
+         * @return Resulting density matrix after applying the Lindbladian (flattened, row-major order)
+         */
 
         std::vector<Complex> applyLinbladian(std::vector<Complex>& rho);
 
@@ -81,62 +85,70 @@ class LinbladianConstructor
     protected:
        
         /**
-         * @brief Compute commutator between two matrix.
+         * @brief Computes the commutator between two matrices.
          * 
-         * Takes two square matrix of same dimension as a input and computes 
-         * the commutator between them.
+         * Calculates [A, B] = AB - BA for two square matrices of the same dimension.
+         * Used to compute the unitary part of the Lindbladian evolution.
          * 
-         * @param matA Input vectorized square matrix.
-         * @param matB Input vectorized square matrix.
-         * @param M Dimension of the square matrix
+         * @param matA First input matrix (flattened, row-major order)
+         * @param matB Second input matrix (flattened, row-major order)
+         * @param M Dimension of the square matrices (M x M)
          * 
-         * @return Commutator between input matrices in vectorized form.
+         * @return Commutator [A, B] (flattened, row-major order)
          */
 
         std::vector<Complex> applyCommutator(const std::vector<Complex>& matA,const std::vector<Complex>& matB, int M);
 
-         /**
-         * @brief Compute anti-commutator between two matrix.
+        /**
+         * @brief Computes the anti-commutator between two matrices.
          * 
-         * Takes two square matrix of same dimension as a input and computes 
-         * the aniti-commutator between them.
+         * Calculates {A, B} = AB + BA for two square matrices of the same dimension.
+         * Used in the dissipative part of the Lindbladian to compute the anti-commutator
+         * term {L†L, ρ}.
          * 
-         * @param matA Input vectorized square matrix.
-         * @param matB Input vectorized square matrix.
-         * @param M Dimension of the square matrix
+         * @param matA First input matrix (flattened, row-major order)
+         * @param matB Second input matrix (flattened, row-major order)
+         * @param M Dimension of the square matrices (M x M)
          * 
-         * @return Anti-Commutator between input matrices in vectorized form.
+         * @return Anti-commutator {A, B} (flattened, row-major order)
          */
 
         std::vector<Complex> applyAntiCommutator(const std::vector<Complex>& matA,const std::vector<Complex>& matB, int M);
 
         /**
-         * @brief Construction of dissipator part of Linbladian.
+         * @brief Constructs the dissipator part of the Lindbladian.
          * 
-         * Disipator part of Linbladian is defined as $\sum_{k} \gamma_{k} \left(L_{k}\rho L_{k}^{\dagger} - \frac{1}{2}\{L_{k}^{\dagger}L_{k}, \rho\}\right)$.
+         * Computes the dissipative contribution to the Lindbladian:
+         * \f[
+         * \sum_{k} \gamma_{k} \left(L_{k}\rho L_{k}^{\dagger} - \frac{1}{2}\{L_{k}^{\dagger}L_{k}, \rho\}\right)
+         * \f]
          * 
-         * @param rho Input vectorized density matrix.
-         * @param N Number of quantum systems/particles.
-         * @param num_states Dimension of Hilbert Space.
-         * @param rate Decay rate.
-         * @param decay Type of Decay. It can be one of Damping, Pumping or Dephasing.
-         * @param scope The scope of decay, whether it is acting Locally or Globally.
+         * This term describes non-unitary evolution due to coupling with the environment.
+         * The specific form depends on the decay type and scope parameters.
          * 
-         * @return Anti-Commutator between input matrices in vectorized form.
+         * @param rho Input density matrix (flattened, row-major order)
+         * @param N Number of quantum systems/spins
+         * @param num_states Dimension of Hilbert space (d^N)
+         * @param rate Decay rate (gamma)
+         * @param decay Type of decay (Damping, Pumping, or Dephasing)
+         * @param scope Scope of decay (Local or Global)
+         * 
+         * @return Dissipator contribution to dρ/dt (flattened, row-major order)
          */
 
         std::vector<Complex> constructDissipator(const std::vector<Complex>& rho,int N, int num_states, double rate, DecayType decay, Scope scope);
 
-        // helper function to enforce Hermiticity
         /**
-         * @brief Helper Function to enforce Hermicity of a matrix.
+         * @brief Enforces Hermiticity of a matrix.
          * 
-         * Floating point errors in computation could affect the hermicity 
-         * of the matrix. Perform (A+A^H)/2 on an input matrix A.
+         * Corrects numerical errors that may violate Hermiticity by computing
+         * (A + A†)/2 for an input matrix A. This ensures that density matrices
+         * remain properly Hermitian throughout computations.
          * 
-         * @param mat Input square matrix.
-         * @param M  Dimension of the matrix.
-         * @return void
+         * @param mat Input matrix to be symmetrized (flattened, row-major order), modified in-place
+         * @param M Dimension of the square matrix (M x M)
+         * 
+         * @note This operation is performed in-place to minimize memory overhead
          */
 
         void enforceHermiticity(std::vector<Complex>& mat, int M);

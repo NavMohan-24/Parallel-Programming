@@ -2,9 +2,17 @@
 #include "utils.hpp"
 
 
-//_______________helper-functions_______________________________________________________
+//=======================================================================================
+// Helper Functions
+//=======================================================================================
 
-// inline function to convert the matrix elements less than tolerance to zero.
+/**
+ * @brief Cleans matrix elements by setting values below tolerance to zero.
+ * 
+ * @param z Complex number to clean
+ * @param tol Tolerance threshold for considering values as zero
+ * @return Complex number with small components zeroed out
+ */
 inline Complex cleanMatrixElements(const Complex& z, double tol=1e-12){
     double re = (std::abs(z.real()) < tol) ? 0: z.real();
     double img = (std::abs(z.imag()) < tol) ? 0: z.imag();
@@ -12,112 +20,119 @@ inline Complex cleanMatrixElements(const Complex& z, double tol=1e-12){
 }
 
 
-//____________________Linbladian-Constructor-Implementation________________________________________________
+//=======================================================================================
+// Lindbladian Constructor Implementation
+//=======================================================================================
 
 LinbladianConstructor::LinbladianConstructor(const std::vector<Complex>& hamiltonian_,
                 int N_, double rate_, DecayType decay_, Scope scope_)
-                : hamiltonian(hamiltonian_), N(N_), num_states(1 << N),
+                : hamiltonian(hamiltonian_), N(N_), num_states(1 << N_),
                 rate(rate_), decay(decay_), scope(scope_){}
-                // validate the hamiltonian in the constructor
 
 
 std::vector<Complex> LinbladianConstructor::applyLinbladian(std::vector<Complex>& rho)
 {
-    // validate the rho
-    enforceHermiticity(rho,num_states);
+    // Enforce Hermiticity to correct numerical errors
+    enforceHermiticity(rho, num_states);
 
-    std::vector<Complex> comm = applyCommutator(hamiltonian,rho, num_states);
+    // Compute unitary part: -i[H, ρ]
+    std::vector<Complex> comm = applyCommutator(hamiltonian, rho, num_states);
+    
+    // Compute dissipative part: Σₖ(Lₖ ρ Lₖ† - ½{Lₖ†Lₖ, ρ})
     std::vector<Complex> diss = constructDissipator(rho, N, num_states, rate, decay, scope);
+    
+    // Combine unitary and dissipative contributions
     std::vector<Complex> linbladian(num_states*num_states);
-
     Complex i_unit(0.0, -1.0);
 
     for (int i = 0; i < num_states*num_states; i++){
-        linbladian[i] =  cleanMatrixElements(i_unit*comm[i]+diss[i]);
-    };
+        linbladian[i] = cleanMatrixElements(i_unit*comm[i] + diss[i]);
+    }
 
     return linbladian;
-};  
+}
 
-std::vector<Complex> LinbladianConstructor::applyCommutator(const std::vector<Complex>& matA,const std::vector<Complex>& matB, int M)
+std::vector<Complex> LinbladianConstructor::applyCommutator(const std::vector<Complex>& matA, const std::vector<Complex>& matB, int M)
 {
-
-    Complex alpha = {1.0,0.0};
-    Complex beta =  {0.0,0.0};
+    Complex alpha = {1.0, 0.0};
+    Complex beta = {0.0, 0.0};
 
     std::vector<Complex> AB(M*M);
     std::vector<Complex> BA(M*M);
-    // std::vector<Complex> C(num_states*num_states);
 
-    // AB = matA*matB (H * rho)
+    // Compute AB = matA * matB
     cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
-        M, M, M, &alpha, matA.data(),
-        M, matB.data(), M, &beta, AB.data(), M
+        M, M, M, &alpha, 
+        matA.data(), M, 
+        matB.data(), M, 
+        &beta, AB.data(), M
     );
 
-    // BA = matB*matA (rho * H) 
+    // Compute BA = matB * matA
     cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
-        M, M, M, &alpha, matB.data(),
-        M, matA.data(), M, &beta, BA.data(), M
+        M, M, M, &alpha, 
+        matB.data(), M, 
+        matA.data(), M, 
+        &beta, BA.data(), M
     );
 
-    // Commutator = AB - BA
+    // Compute commutator: [A, B] = AB - BA
     for (int i = 0; i < M*M; i++){
         AB[i] -= BA[i];
-    };
+    }
 
     return AB;
+}
 
-};
-
-std::vector<Complex> LinbladianConstructor::applyAntiCommutator(const std::vector<Complex>& matA,const std::vector<Complex>& matB, int M)
+std::vector<Complex> LinbladianConstructor::applyAntiCommutator(const std::vector<Complex>& matA, const std::vector<Complex>& matB, int M)
 {
-
-    Complex alpha = {1.0,0.0};
-    Complex beta =  {0.0,0.0};
+    Complex alpha = {1.0, 0.0};
+    Complex beta = {0.0, 0.0};
 
     std::vector<Complex> AB(M*M);
     std::vector<Complex> BA(M*M);
-    
 
-    // A = matA * matB
+    // Compute AB = matA * matB
     cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
-        M, M, M, &alpha, matA.data(),
-        M, matB.data(), M, &beta, AB.data(), M
+        M, M, M, &alpha, 
+        matA.data(), M, 
+        matB.data(), M, 
+        &beta, AB.data(), M
     );
 
-    // A = matB * matA
+    // Compute BA = matB * matA
     cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
-        M, M, M, &alpha, matB.data(),
-        M, matA.data(), M, &beta, BA.data(), M
+        M, M, M, &alpha, 
+        matB.data(), M, 
+        matA.data(), M, 
+        &beta, BA.data(), M
     );
 
-    // Commutator = AB + BA
+    // Compute anti-commutator: {A, B} = AB + BA
     for (int i = 0; i < M*M; i++){
         AB[i] += BA[i];
-    };
+    }
 
     return AB;
-};
+}
 
-std::vector<Complex> LinbladianConstructor::constructDissipator(const std::vector<Complex>& rho,int N, 
+std::vector<Complex> LinbladianConstructor::constructDissipator(const std::vector<Complex>& rho, int N, 
     int num_states, double rate, DecayType decay, Scope scope)
-    {
-    // D(ρ)=∑_k​(J_k ​ρ J_k^†​ − 1/2{J_k^†​ J_k​,ρ})
+{
+    // Compute dissipator: D(ρ) = Σₖ(Jₖ ρ Jₖ† - ½{Jₖ†Jₖ, ρ})
+    
+    std::vector<Complex> Dissipator(num_states*num_states, Complex(0, 0));
+    Complex beta = {0.0, 0.0};
 
-    // TODO need to optimise Dissipator construction remove additional matrices
-
-    std::vector<Complex> Dissipator(num_states*num_states, Complex(0,0));
-    Complex beta =  {0.0,0.0};
-
+    // Sum over all jump operators
     for (int k = 1; k <= N; k++){
 
-        std::vector<Complex> Jk = constructJumpOperator(N,num_states,k,rate,decay,scope);
+        // Construct jump operator Jₖ for site k
+        std::vector<Complex> Jk = constructJumpOperator(N, num_states, k, rate, decay, scope);
 
-        //compute Jk^†​Jk
-        Complex alpha = {0.5,0.0}; // 1/2 infront of anti commutator
-
-        std::vector<Complex> K(num_states*num_states, Complex(0,0));
+        // Compute Jₖ†Jₖ with factor of 1/2 for anti-commutator term
+        Complex alpha = {0.5, 0.0};
+        std::vector<Complex> K(num_states*num_states, Complex(0, 0));
         cblas_zgemm(CblasRowMajor, CblasConjTrans, CblasNoTrans,
                     num_states, num_states, num_states,
                     &alpha, Jk.data(), num_states,
@@ -125,12 +140,12 @@ std::vector<Complex> LinbladianConstructor::constructDissipator(const std::vecto
                     &beta, K.data(), num_states
                 );
 
-        // compute  1/2{Jk^†​ Jk​,ρ})
-        std::vector<Complex> SP = applyAntiCommutator(K,rho,num_states);
+        // Compute anti-commutator term: ½{Jₖ†Jₖ, ρ}
+        std::vector<Complex> SP = applyAntiCommutator(K, rho, num_states);
 
-        //compute L_k ​ρ
-        alpha = {1.0,0.0};
-        std::vector<Complex> tempA(num_states*num_states, Complex(0,0));
+        // Compute first part: Jₖ ρ
+        alpha = {1.0, 0.0};
+        std::vector<Complex> tempA(num_states*num_states, Complex(0, 0));
         cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
                     num_states, num_states, num_states,
                     &alpha, Jk.data(), num_states,
@@ -138,8 +153,8 @@ std::vector<Complex> LinbladianConstructor::constructDissipator(const std::vecto
                     &beta, tempA.data(), num_states
                 );
 
-        //compute L_k ​ρ L_k^†
-        std::vector<Complex> FP(num_states*num_states, Complex(0,0));
+        // Compute full positive term: Jₖ ρ Jₖ†
+        std::vector<Complex> FP(num_states*num_states, Complex(0, 0));
         cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasConjTrans,
                     num_states, num_states, num_states,
                     &alpha, tempA.data(), num_states,
@@ -147,25 +162,28 @@ std::vector<Complex> LinbladianConstructor::constructDissipator(const std::vecto
                     &beta, FP.data(), num_states
                 );
 
+        // Accumulate contribution: (Jₖ ρ Jₖ† - ½{Jₖ†Jₖ, ρ})
         for (int i = 0; i < num_states*num_states; i++){
             Dissipator[i] += FP[i] - SP[i];
-        };
-            
-    };
+        }
+    }
+    
     return Dissipator;
-};
+}
 
 void LinbladianConstructor::enforceHermiticity(std::vector<Complex>& mat, int M) {
+    // Symmetrize matrix to enforce Hermiticity: mat = (mat + mat†) / 2
+    
     for (int i = 0; i < M; i++) {
-        // Diagonal must be real
+        // Diagonal elements must be real
         mat[i*M + i] = Complex(mat[i*M + i].real(), 0.0);
         
-        // Off-diagonal: symmetrize
+        // Symmetrize off-diagonal elements
         for (int j = i+1; j < M; j++) {
             Complex m_ij = mat[i*M + j];
             Complex m_ji = mat[j*M + i];
             
-            // Average: (m_ij + conj(m_ji))/2
+            // Average to enforce Hermiticity: (m_ij + conj(m_ji)) / 2
             Complex sym_val = 0.5 * (m_ij + std::conj(m_ji));
             
             mat[i*M + j] = sym_val;
