@@ -35,16 +35,19 @@ std::vector<Complex> LinbladianConstructor::applyLinbladian(std::vector<Complex>
     // Enforce Hermiticity to correct numerical errors
     enforceHermiticity(rho, num_states);
 
+
     // Compute unitary part: -i[H, ρ]
     std::vector<Complex> comm = applyCommutator(hamiltonian, rho, num_states);
     
     // Compute dissipative part: Σₖ(Lₖ ρ Lₖ† - ½{Lₖ†Lₖ, ρ})
     std::vector<Complex> diss = constructDissipator(rho, N, num_states, rate, decay, scope);
     
+    
     // Combine unitary and dissipative contributions
     std::vector<Complex> linbladian(num_states*num_states);
     Complex i_unit(0.0, -1.0);
 
+    #pragma omp parallel for if (num_states > std::pow(2,7))
     for (int i = 0; i < num_states*num_states; i++){
         linbladian[i] = cleanMatrixElements(i_unit*comm[i] + diss[i]);
     }
@@ -77,6 +80,7 @@ std::vector<Complex> LinbladianConstructor::applyCommutator(const std::vector<Co
     );
 
     // Compute commutator: [A, B] = AB - BA
+    #pragma omp parallel for if (M > std::pow(2,7))
     for (int i = 0; i < M*M; i++){
         AB[i] -= BA[i];
     }
@@ -109,6 +113,7 @@ std::vector<Complex> LinbladianConstructor::applyAntiCommutator(const std::vecto
     );
 
     // Compute anti-commutator: {A, B} = AB + BA
+    #pragma omp parallel for if (M > std::pow(2,7)) 
     for (int i = 0; i < M*M; i++){
         AB[i] += BA[i];
     }
@@ -125,6 +130,7 @@ std::vector<Complex> LinbladianConstructor::constructDissipator(const std::vecto
     Complex beta = {0.0, 0.0};
 
     // Sum over all jump operators
+    #pragma omp parallel for schedule(dynamic) 
     for (int k = 1; k <= N; k++){
 
         // Construct jump operator Jₖ for site k
@@ -163,9 +169,11 @@ std::vector<Complex> LinbladianConstructor::constructDissipator(const std::vecto
                 );
 
         // Accumulate contribution: (Jₖ ρ Jₖ† - ½{Jₖ†Jₖ, ρ})
+        #pragma omp critical{
         for (int i = 0; i < num_states*num_states; i++){
             Dissipator[i] += FP[i] - SP[i];
         }
+    }
     }
     
     return Dissipator;
@@ -174,6 +182,7 @@ std::vector<Complex> LinbladianConstructor::constructDissipator(const std::vecto
 void LinbladianConstructor::enforceHermiticity(std::vector<Complex>& mat, int M) {
     // Symmetrize matrix to enforce Hermiticity: mat = (mat + mat†) / 2
     
+    #pragma omp parallel for if (M > std::pow(2,7))
     for (int i = 0; i < M; i++) {
         // Diagonal elements must be real
         mat[i*M + i] = Complex(mat[i*M + i].real(), 0.0);
