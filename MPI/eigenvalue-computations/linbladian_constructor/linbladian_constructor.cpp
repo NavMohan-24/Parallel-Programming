@@ -1,5 +1,4 @@
 #include "linbladian_constructor.hpp"
-#include "utils.hpp"
 
 
 //=======================================================================================
@@ -41,7 +40,7 @@ std::vector<Complex> LinbladianConstructor::applyLinbladian(std::vector<Complex>
     
     // Compute dissipative part: Σₖ(Lₖ ρ Lₖ† - ½{Lₖ†Lₖ, ρ})
     std::vector<Complex> diss = constructDissipator(rho, N, num_states, rate, decay, scope);
-    
+
     
     // Combine unitary and dissipative contributions
     std::vector<Complex> linbladian(num_states*num_states);
@@ -51,7 +50,7 @@ std::vector<Complex> LinbladianConstructor::applyLinbladian(std::vector<Complex>
     for (int i = 0; i < num_states*num_states; i++){
         linbladian[i] = cleanMatrixElements(i_unit*comm[i] + diss[i]);
     }
-
+    
     return linbladian;
 }
 
@@ -78,7 +77,7 @@ std::vector<Complex> LinbladianConstructor::applyCommutator(const std::vector<Co
         matA.data(), M, 
         &beta, BA.data(), M
     );
-
+    
     // Compute commutator: [A, B] = AB - BA
     #pragma omp parallel for if (M > std::pow(2,7))
     for (int i = 0; i < M*M; i++){
@@ -169,11 +168,13 @@ std::vector<Complex> LinbladianConstructor::constructDissipator(const std::vecto
                 );
 
         // Accumulate contribution: (Jₖ ρ Jₖ† - ½{Jₖ†Jₖ, ρ})
-        #pragma omp critical{
-        for (int i = 0; i < num_states*num_states; i++){
-            Dissipator[i] += FP[i] - SP[i];
+        #pragma omp critical
+        {
+            for (int i = 0; i < num_states*num_states; i++){
+                Dissipator[i] += FP[i] - SP[i];
+            }
+
         }
-    }
     }
     
     return Dissipator;
