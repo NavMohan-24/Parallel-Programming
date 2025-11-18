@@ -24,6 +24,20 @@ using Complex = std::complex<double>;
 struct EigenResult {
     std::vector<Complex> eigenvalues;   // Eigenvalues of the Lindbladian
     std::vector<Complex> eigenvectors;  // Eigenvectors stored in row-major order
+
+    /**
+     * @brief Sorts eigenvalue-eigenvector pairs.
+     * 
+     * Reorders eigenvalues and their corresponding eigenvectors either in ascending
+     * or descending order based on the magnitude of the real part of eigenvalues. 
+     * 
+     * @param row Number of rows in the eigenvector matrix
+     * @param col Number of columns in the eigenvector matrix = number of eigenvectors found through Arnoldi iteration
+     * @param descending If true, sort by decreasing magnitude; otherwise by increasing magnitude
+     */
+
+    void sortEigenPairs(int row, int col,
+                    bool descending = false); 
 };
 
 /**
@@ -132,21 +146,9 @@ class ArnoldiLinbladianDiagonalizer
 
         double computeInnerProduct(const std::vector<Complex>& matA, const std::vector<Complex>& matB, int M, double tol = 1e-12);
     
-        /**
-         * @brief Sorts eigenvalue-eigenvector pairs.
-         * 
-         * Reorders eigenvalues and their corresponding eigenvectors either in ascending
-         * or descending order based on the magnitude of the eigenvalues. Used to identify
-         * dominant decay modes or steady states of the open quantum system.
-         * 
-         * @param eigenvalues Vector of eigenvalues, reordered in-place
-         * @param eigenvectors Matrix of eigenvectors in row-major order, reordered in-place
-         * @param row Number of rows in the eigenvector matrix
-         * @param col Number of columns (number of eigenvectors)
-         * @param descending If true, sort by decreasing magnitude; otherwise by increasing magnitude
-         */
         
-        void sortEigenPairs(std::vector<Complex>& eigenvalues,std::vector<Complex>& eigenvectors,int row, int col, bool descending = false);
+        
+        // void sortEigenPairs(std::vector<Complex>& eigenvalues,std::vector<Complex>& eigenvectors,int row, int col, bool descending = false);
     
 };
 

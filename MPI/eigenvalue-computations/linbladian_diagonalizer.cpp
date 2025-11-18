@@ -32,6 +32,38 @@ inline Complex computeTrace(const std::vector<Complex>& mat, int M){
     return trace;
 }
 
+void EigenResult::sortEigenPairs(int row, int col, bool descending) {
+    // Create index vector for indirect sorting
+    std::vector<int> indices(eigenvalues.size());
+    for (size_t i = 0; i < indices.size(); ++i)
+        indices[i] = i;
+
+    // Sort indices by magnitude of corresponding eigenvalues
+    std::sort(indices.begin(), indices.end(),
+              [descending, this](int i, int j) {
+                  return (descending)
+                      ? (std::abs(eigenvalues[i].real()) > std::abs(eigenvalues[j].real()))
+                      : (std::abs(eigenvalues[i].real()) < std::abs(eigenvalues[j].real()));
+        });
+
+    // Apply sorted order to eigenvalues and eigenvectors
+    std::vector<Complex> sortedVals(eigenvalues.size());
+    std::vector<Complex> sortedVecs(row * col);
+
+    for (int new_j = 0; new_j < col; ++new_j) {
+        int old_j = indices[new_j];
+        sortedVals[new_j] = eigenvalues[old_j];
+
+        // Copy column old_j to column new_j
+        for (int r = 0; r < row; ++r) {
+            sortedVecs[r * col + new_j] = eigenvectors[r * col + old_j];
+        }
+    }
+
+    eigenvalues = std::move(sortedVals);
+    eigenvectors = std::move(sortedVecs);
+}
+
 //=======================================================================================
 // Lindbladian Diagonalizer Implementation
 //=======================================================================================
@@ -134,8 +166,9 @@ EigenResult ArnoldiLinbladianDiagonalizer::diagonalize(const std::vector<Complex
     );
 
     // Sort eigenvalue-eigenvector pairs
-    sortEigenPairs(result.eigenvalues, result.eigenvectors, num_states*num_states, n, descending);
+    result.sortEigenPairs(num_states*num_states, n , descending);
     return result;
+
 }
 
 
@@ -259,39 +292,7 @@ double ArnoldiLinbladianDiagonalizer::computeInnerProduct(const std::vector<Comp
     }
 }
 
-void ArnoldiLinbladianDiagonalizer::sortEigenPairs(std::vector<Complex>& eigenvalues,
-                    std::vector<Complex>& eigenvectors, int row, int col,
-                    bool descending) {
-    // Create index vector for indirect sorting
-    std::vector<int> indices(eigenvalues.size());
-    for (int i = 0; i < indices.size(); ++i)
-        indices[i] = i;
 
-    // Sort indices by magnitude of corresponding eigenvalues
-    std::sort(indices.begin(), indices.end(),
-              [descending, &eigenvalues](int i, int j) {
-                  return (descending)
-                      ? (std::abs(eigenvalues[i].real()) > std::abs(eigenvalues[j].real()))
-                      : (std::abs(eigenvalues[i].real()) < std::abs(eigenvalues[j].real()));
-        });
-
-    // Apply sorted order to eigenvalues and eigenvectors
-    std::vector<Complex> sortedVals(eigenvalues.size());
-    std::vector<Complex> sortedVecs(row * col);
-
-    for (int new_j = 0; new_j < col; ++new_j) {
-        int old_j = indices[new_j];
-        sortedVals[new_j] = eigenvalues[old_j];
-
-        // Copy column old_j to column new_j
-        for (int r = 0; r < row; ++r) {
-            sortedVecs[r * col + new_j] = eigenvectors[r * col + old_j];
-        }
-    }
-
-    eigenvalues = std::move(sortedVals);
-    eigenvectors = std::move(sortedVecs);
-}
 
 //=======================================================================================
 // Test Main Function
