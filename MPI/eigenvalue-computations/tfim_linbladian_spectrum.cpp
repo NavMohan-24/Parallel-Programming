@@ -5,7 +5,7 @@
 #include "density_matrix/density_matrix.hpp"
 #include "hamiltonian/hamiltonian.hpp"
 #include "jump_operator/jump_operator.hpp"
-#include "linbladian_diagonalizer.hpp"
+#include "arnoldi_diagonalizer/linbladian_diagonalizer.hpp"
 #include <fstream>
 #include <format>
 
