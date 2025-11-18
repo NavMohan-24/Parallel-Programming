@@ -1,13 +1,28 @@
 #include "linbladian.hpp"
 #include "utils.hpp"
 
+//_______________helper-functions_______________________________________________________
 
+// inline function to convert the matrix elements less than tolerance to zero.
 inline Complex cleanMatrixElements(const Complex& z, double tol=1e-12){
     double re = (std::abs(z.real()) < tol) ? 0: z.real();
     double img = (std::abs(z.imag()) < tol) ? 0: z.imag();
     return {re, img};
 }
-// Add helper function to enforce Hermiticity
+
+
+// helper function to enforce Hermiticity
+/**
+ * @brief Helper Function to enforce Hermicity of a matrix.
+ * 
+ * Floating point errors in computation could affect the hermicity 
+ * of the matrix. Perform (A+A^H)/2 on an input matrix A.
+ * 
+ * @param mat Input square matrix.
+ * @param M  Dimension of the matrix.
+ * @return void
+ */
+
 void enforceHermiticity(std::vector<Complex>& mat, int M) {
     for (int i = 0; i < M; i++) {
         // Diagonal must be real
@@ -27,7 +42,7 @@ void enforceHermiticity(std::vector<Complex>& mat, int M) {
     }
 }
 
-
+// inline function to compute trace of a matrix.
 inline Complex computeTrace(const std::vector<Complex>& mat, int M){
 
     // assumes a square matrix
@@ -39,18 +54,19 @@ inline Complex computeTrace(const std::vector<Complex>& mat, int M){
     
 }
 
-//_________________________________________________________________________
+//_______________________Linbladian-Solver-Implementation________________________________________________
 
-LinbladianSolver::LinbladianSolver(const std::vector<Complex>& hamiltonian_,
-                int N_, double rate_, DecayType decay_, Scope scope_)
-                : hamiltonian(hamiltonian_), N(N_), num_states(1<< N_),
+LinbladianDiagonalizer::LinbladianDiagonalizer(const std::vector<Complex>& hamiltonian_,
+                int N_, int d_, double rate_, DecayType decay_, Scope scope_)
+                : hamiltonian(hamiltonian_), N(N_), d(d_), num_states(std::pow(d_,N_)),
                 rate(rate_), decay(decay_), scope(scope_){}
                 // validate the hamiltonian in the constructor
 
 
-std::vector<Complex> LinbladianSolver::applyLinbladian(const std::vector<Complex>& rho)
+std::vector<Complex> LinbladianDiagonalizer::applyLinbladian(std::vector<Complex>& rho)
 {
     // validate the rho
+    enforceHermiticity(rho,num_states);
 
     std::vector<Complex> comm = applyCommutator(hamiltonian,rho, num_states);
     std::vector<Complex> diss = constructDissipator(rho, N, num_states, rate, decay, scope);
@@ -67,8 +83,8 @@ std::vector<Complex> LinbladianSolver::applyLinbladian(const std::vector<Complex
 
 
 
-std::vector<double> LinbladianSolver::constructHessenbergMatrix(const std::vector<Complex>& initial_rho, int k, double tol)
-{   
+std::vector<double> LinbladianDiagonalizer::constructHessenbergMatrix(const std::vector<Complex>& initial_rho, int k, double tol)
+{     
     //lambda function to calculate index
     auto idx = [k](int i, int j){return i*(k+1)+j;};
 
@@ -142,7 +158,7 @@ std::vector<double> LinbladianSolver::constructHessenbergMatrix(const std::vecto
             };
             
             // calculate (A+A^H)/2 to ensure hermicity of density matrix after floating point errors
-            enforceHermiticity(kyrlov_basis[j+1],num_states); // (can move it back to apply linbladian rho)
+            // enforceHermiticity(kyrlov_basis[j+1],num_states); // (can move it back to apply linbladian rho)
 
 
         }    
@@ -159,7 +175,7 @@ std::vector<double> LinbladianSolver::constructHessenbergMatrix(const std::vecto
     return H;
 }
 
-EigenResult LinbladianSolver::diagonalize(const std::vector<Complex>& init_rho, int k, bool descending, double tol){
+EigenResult LinbladianDiagonalizer::diagonalize(const std::vector<Complex>& init_rho, int k, bool descending, double tol){
 
     int max_k = num_states*num_states - 1;
     if (k > max_k){
@@ -252,7 +268,7 @@ EigenResult LinbladianSolver::diagonalize(const std::vector<Complex>& init_rho, 
 
 }
 
-double LinbladianSolver::computeInnerProduct(const std::vector<Complex>& matA, const std::vector<Complex>& matB, int M, double tol)
+double LinbladianDiagonalizer::computeInnerProduct(const std::vector<Complex>& matA, const std::vector<Complex>& matB, int M, double tol)
 {
     std::vector<Complex> matC(M*M);
 
@@ -277,7 +293,7 @@ double LinbladianSolver::computeInnerProduct(const std::vector<Complex>& matA, c
 }
 
 // while doing inplace modification matrix need to be passed by reference.
-void LinbladianSolver::normalizeMatrix(std::vector<Complex>& mat, int M){
+void LinbladianDiagonalizer::normalizeMatrix(std::vector<Complex>& mat, int M){
 
     // set norm if norm argument is not specified
     double n = computeInnerProduct(mat, mat, M); 
@@ -289,7 +305,7 @@ void LinbladianSolver::normalizeMatrix(std::vector<Complex>& mat, int M){
 
 }
 
-void LinbladianSolver::sortEigenPairs(std::vector<Complex>& eigenvalues,
+void LinbladianDiagonalizer::sortEigenPairs(std::vector<Complex>& eigenvalues,
                     std::vector<Complex>& eigenvectors,int row, int col,
                     bool descending) {
     // Create index vector [0, 1, 2, ..., n-1]
@@ -325,7 +341,7 @@ void LinbladianSolver::sortEigenPairs(std::vector<Complex>& eigenvalues,
 }
 
 
-std::vector<Complex> LinbladianSolver::applyCommutator(const std::vector<Complex>& matA,const std::vector<Complex>& matB, int M)
+std::vector<Complex> LinbladianDiagonalizer::applyCommutator(const std::vector<Complex>& matA,const std::vector<Complex>& matB, int M)
 {
 
     Complex alpha = {1.0,0.0};
@@ -356,7 +372,7 @@ std::vector<Complex> LinbladianSolver::applyCommutator(const std::vector<Complex
 
 };
 
-std::vector<Complex> LinbladianSolver::applyAntiCommutator(const std::vector<Complex>& matA,const std::vector<Complex>& matB, int M)
+std::vector<Complex> LinbladianDiagonalizer::applyAntiCommutator(const std::vector<Complex>& matA,const std::vector<Complex>& matB, int M)
 {
 
     Complex alpha = {1.0,0.0};
@@ -387,7 +403,7 @@ std::vector<Complex> LinbladianSolver::applyAntiCommutator(const std::vector<Com
 };
 
 
-std::vector<Complex> LinbladianSolver::constructDissipator(const std::vector<Complex>& mat,int N, 
+std::vector<Complex> LinbladianDiagonalizer::constructDissipator(const std::vector<Complex>& rho,int N, 
     int num_states, double rate, DecayType decay, Scope scope)
     {
     // D(ρ)=∑_k​(J_k ​ρ J_k^†​ − 1/2{J_k^†​ J_k​,ρ})
@@ -413,7 +429,7 @@ std::vector<Complex> LinbladianSolver::constructDissipator(const std::vector<Com
                 );
 
         // compute  1/2{Jk^†​ Jk​,ρ})
-        std::vector<Complex> SP = applyAntiCommutator(K,mat,num_states);
+        std::vector<Complex> SP = applyAntiCommutator(K,rho,num_states);
 
         //compute L_k ​ρ
         alpha = {1.0,0.0};
@@ -421,7 +437,7 @@ std::vector<Complex> LinbladianSolver::constructDissipator(const std::vector<Com
         cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
                     num_states, num_states, num_states,
                     &alpha, Jk.data(), num_states,
-                    mat.data(), num_states, 
+                    rho.data(), num_states, 
                     &beta, tempA.data(), num_states
                 );
 
@@ -492,7 +508,7 @@ int main(){
     // printMatrix(hamiltonian, num_states, num_states);
     // std::cout<<"\n";
 
-    LinbladianSolver LSolver(hamiltonian, N);
+    LinbladianDiagonalizer LSolver(hamiltonian, N, 2);
     // std::cout<<"Printing dRho" << "\n";
     // std::vector<Complex> rho_new = LSolver.applyLinbladian(rho);
     // printMatrix(rho_new, num_states, num_states);
