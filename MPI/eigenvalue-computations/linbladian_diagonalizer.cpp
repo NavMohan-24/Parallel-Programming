@@ -1,5 +1,4 @@
 #include "linbladian_diagonalizer.hpp"
-// #include "utils.hpp"
 
 //=======================================================================================
 // Helper Functions
@@ -302,14 +301,15 @@ void ArnoldiLinbladianDiagonalizer::sortEigenPairs(std::vector<Complex>& eigenva
 #include "density_matrix/density_matrix.hpp"
 #include "hamiltonian/hamiltonian.hpp"
 #include "jump_operator/jump_operator.hpp"
-#include "utils.hpp"
+
+#include <fstream>
 
 int main(){
 
     // System parameters
-    int N = 2;                    // Number of qubits
+    int N = 3;                    // Number of qubits
     int num_states = 1 << N;      // Hilbert space dimension (2^N)
-    int K = 15;                   // Krylov subspace dimension
+    int K = 40;                   // Krylov subspace dimension
     double J = -1.0;              // Coupling strength
     double h = 0.1;               // Magnetic field strength
 
@@ -356,9 +356,15 @@ int main(){
         std::cout << "\n";
     }
     
+    std::ofstream file("eigVals40.csv");
     std::cout << "=== Ritz Values (Eigenvalues) ===\n\n";
     for(int k = 0; k < size; k++){
         std::cout << "Eigenvalue " << k+1 << ": " << result.eigenvalues[k] << "\n";
+        file << result.eigenvalues[k].real() << "," << result.eigenvalues[k].imag() << "\n";
+
     }
+    file.close();
+
+
 }
 #endif
