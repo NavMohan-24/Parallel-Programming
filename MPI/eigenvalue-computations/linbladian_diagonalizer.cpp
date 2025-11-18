@@ -271,8 +271,8 @@ void ArnoldiLinbladianDiagonalizer::sortEigenPairs(std::vector<Complex>& eigenva
     std::sort(indices.begin(), indices.end(),
               [descending, &eigenvalues](int i, int j) {
                   return (descending)
-                      ? (std::abs(eigenvalues[i]) > std::abs(eigenvalues[j]))
-                      : (std::abs(eigenvalues[i]) < std::abs(eigenvalues[j]));
+                      ? (std::abs(eigenvalues[i].real()) > std::abs(eigenvalues[j].real()))
+                      : (std::abs(eigenvalues[i].real()) < std::abs(eigenvalues[j].real()));
         });
 
     // Apply sorted order to eigenvalues and eigenvectors
